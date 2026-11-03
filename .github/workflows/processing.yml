@@ -16,6 +16,8 @@ jobs:
         with:
           python-version: '3.12'
       - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.13.7'
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: uv sync --locked --extra dev --extra remote --python 3.12
       - run: uv run --no-sync ruff check src scripts tests --select E9,F821,F822,F823

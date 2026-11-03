@@ -691,7 +691,15 @@
     "windowsDeselected": [
       "tests/test_editorial_replay_index.py::test_old_library_uses_scoped_bounded_reads_without_a_global_json_scan"
     ],
-    "restoredAcceptanceCase": "tests/test_editorial_replay_index.py::test_upgrade_target_indexes_survive_full_snapshot_check_and_restore"
+    "restoredAcceptanceCase": "tests/test_editorial_replay_index.py::test_upgrade_target_indexes_survive_full_snapshot_check_and_restore",
+    "ciToolchain": {
+      "uv": "0.13.7",
+      "registry": "https://pypi.org/simple",
+      "lockCheck": "passed",
+      "packageCount": 97,
+      "packageVersionsChangedByIndexRepair": 0,
+      "firstRemoteAttempt": "Dependency lock rejected due to local mirror registry; repaired using project index without removing --locked."
+    }
   },
   "archiveReadCompatibility": [
     {
@@ -759,7 +767,7 @@
   "finalInventory": [
     {
       "path": ".github/workflows/processing.yml",
-      "sha256": "f7e9267dfee34a01a02824067eead9818c3bf0477744927904934f1051fbacdf",
+      "sha256": "7057dd0261af3819043bc47bd3f4c572a461b0c66a44033883cf210bdc377c43",
       "provenance": "downstream-specific",
       "upstream_sha256": null
     },
@@ -891,7 +899,7 @@
     },
     {
       "path": "docs/upstream-sync-20261104.md",
-      "sha256": "bb1433d68e6483aa84b202935b611db3d40e59c6e1a62d1fea702e23a1e38a71",
+      "sha256": "5a325339349e4dae5403fb5183d03e91192b26d950a7671c19c0b1c5a4c6d470",
       "provenance": "downstream-specific",
       "upstream_sha256": null
     },
@@ -1545,7 +1553,7 @@
     },
     {
       "path": "uv.lock",
-      "sha256": "7f560b9e3bc9ace2ae89e9dd3182e3dd380160b52f8412509887891ca21dcf0d",
+      "sha256": "592cb6e27e7d78d136484a6c6a5493001ba4ee880c1755fb178bcde6e596579e",
       "provenance": "adapted-upstream",
       "upstream_sha256": "e0b4a2e4f43f7aa0c8294ebe7aead64a0db5e38cf93f265288e6f7faf69155e6"
     }

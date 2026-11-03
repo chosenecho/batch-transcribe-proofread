@@ -36,6 +36,7 @@ ASR 的新增对齐策略需要明确配置，默认策略不变。时间戳与�
 - 上游通知单元测试：14 项通过；mypy 的 18 个配置源文件无问题；Ruff 的语法和未定义名称检查通过。
 - 契约资源检查：83 个登记契约、47 个 schema，文档镜像与包内权威资源一致。依赖锁检查及 wheel / sdist 构建通过。
 - 独立安装验收：6 项通过。使用仓库外的干净虚拟环境和本地 wheel 依赖，验证主入口、兼容入口、新命令、无数据库错误及包内 SQL / JSON 契约资源；临时目录和 uv 缓存显式指向可写位置。
+- 远端首次验收在严格锁检查阶段发现本地镜像索引与 CI 的项目索引不一致。锁文件现按项目声明的 PyPI 重建，97 个包的版本均未改变；CI 固定 uv 0.13.7，相同工具链下锁检查通过。
 - 四种隔离的旧、新运行库与 universal 归档均可只读打开，探测前后数据库 SHA-256 不变。清单保存每个合成 fixture 的哈希与结果，不包含生产数据。
 
 先前因旧 schema 拒绝而取消选择的 `test_upgrade_target_indexes_survive_full_snapshot_check_and_restore` 已通过，现已重新纳入验收。Windows 仍明确排除 `test_old_library_uses_scoped_bounded_reads_without_a_global_json_scan`：它在初次拆分时已重现 SQLite URI 打开失败；Linux CI 不排除这一项。
