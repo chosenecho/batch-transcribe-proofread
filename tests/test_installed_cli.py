@@ -26,13 +26,47 @@ def isolated_cli(tmp_path_factory: pytest.TempPathFactory):
 def test_installed_console_script_help(isolated_cli) -> None:
     proc = run_installed(isolated_cli, ["--help"])
     assert proc.returncode == 0, proc.stderr
-    assert "bili-asr" in proc.stdout
+    assert "batch-transcribe" in proc.stdout
     for command in (
-        "workflow", "fetch-meta", "status", "runs", "search-index",
+        "workflow", "input", "status", "runs", "search-index",
+        "transcribe", "production", "delivery",
         "coverage", "verify", "export", "check-asr-env", "publication", "editorial", "snapshot",
     ):
         assert command in proc.stdout
+    for removed in ("fetch-meta", "fetch-tags", "user-content"):
+        assert removed not in proc.stdout
     assert_redacted(proc)
+
+
+def test_installed_qwen_audio_file_help(isolated_cli) -> None:
+    proc = run_installed(isolated_cli, ["transcribe", "file", "--help"])
+    assert proc.returncode == 0, proc.stderr
+    for option in ("--audio", "--api-key-file", "--expected-sha256", "--retry-failed"):
+        assert option in proc.stdout
+    assert_redacted(proc)
+    checked = subprocess.run(
+        [isolated_cli.python, "-c",
+         "from importlib.util import find_spec; from pathlib import Path; import sys; "
+         "p = find_spec('bili_asr.asr.bailian').origin; "
+         "assert Path(p).resolve().is_relative_to(Path(sys.prefix).resolve()); "
+         "assert 'torch' not in sys.modules and 'transformers' not in sys.modules"],
+        cwd=isolated_cli.venv_dir, env=clean_cli_env(), capture_output=True, text=True, check=False,
+    )
+    assert checked.returncode == 0, checked.stderr
+
+
+def test_installed_primary_entrypoint_keeps_local_input_boundary(isolated_cli):
+    primary = Path(isolated_cli.executable).with_name(
+        "batch-transcribe.exe" if Path(isolated_cli.executable).suffix == ".exe" else "batch-transcribe")
+    for arguments in (["--help"], ["workflow", "batch", "--help"],
+                      ["production", "--help"], ["delivery", "--help"]):
+        result = subprocess.run([str(primary), *arguments], cwd=isolated_cli.venv_dir,
+            env=clean_cli_env(), capture_output=True, text=True, encoding="utf-8")
+        assert result.returncode == 0, result.stderr
+        assert "fetch-meta" not in result.stdout
+    removed = subprocess.run([str(primary), "fetch-meta"], cwd=isolated_cli.venv_dir,
+        env=clean_cli_env(), capture_output=True, text=True, encoding="utf-8")
+    assert removed.returncode != 0
 
 def test_installed_contract_resources_resolve_offline_outside_checkout(isolated_cli) -> None:
     checked = subprocess.run(
@@ -170,7 +204,7 @@ def test_installed_proofread_help_and_workflow_status(isolated_cli, tmp_path: Pa
     status = run_installed(isolated_cli, ["workflow", "status", "--archive-root", str(root)])
     assert status.returncode == 1, status.stdout
     assert "no archive database" in status.stderr
-    assert "fetch-meta" in status.stderr
+    assert "input import" in status.stderr
     assert status.stdout == ""
     assert_redacted(status)
     assert not root.exists()

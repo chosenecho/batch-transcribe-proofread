@@ -23,6 +23,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tomllib
 from typing import Mapping
 
 from scripts.project_staging import stage_project
@@ -314,8 +315,10 @@ def _build_local_wheel(staged_pkg: str, env: Mapping[str, str]) -> str:
     )
     if built.returncode != 0:
         _fail_prereq(f"offline local wheel build failed ({_summarize(built)})")
+    metadata = tomllib.loads(Path(staged_pkg, "pyproject.toml").read_text(encoding="utf-8"))
+    prefix = metadata["project"]["name"].replace("-", "_") + "-"
     wheels = [os.path.join(wheel_dir, name) for name in os.listdir(wheel_dir)
-              if name.startswith("bili_asr-") and name.endswith(".whl")]
+              if name.startswith(prefix) and name.endswith(".whl")]
     if len(wheels) != 1:
         _fail_prereq("offline local wheel build did not produce exactly one package wheel")
     return wheels[0]

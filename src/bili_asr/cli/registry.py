@@ -46,6 +46,9 @@ class CommandSpec:
 COMMANDS = MappingProxyType({
     "runs": CommandSpec("_cmd_runs", "bili_asr.cli.status_cmd", ArtifactPolicy.NONE, ArchiveAccessMode.READ),
     "input": CommandSpec("_cmd_input", "bili_asr.cli.local_input", ArtifactPolicy.NONE, None),
+    "production": CommandSpec("_cmd_production", 'bili_asr.cli.production', ArtifactPolicy.NONE, None),
+    "delivery": CommandSpec("_cmd_delivery", 'bili_asr.cli.delivery', ArtifactPolicy.NONE, None),
+    "transcribe": CommandSpec("_cmd_transcribe", "bili_asr.cli.transcribe", ArtifactPolicy.NONE, None),
     "task-state": CommandSpec("_cmd_task_state", 'bili_asr.cli.task_state', ArtifactPolicy.NONE, None),
     "maintenance": CommandSpec("_cmd_maintenance_package", 'bili_asr.cli.maintenance_package', ArtifactPolicy.NONE, None),
     "retry-maintenance": CommandSpec("_cmd_retry_maintenance", 'bili_asr.cli.maintenance', ArtifactPolicy.NONE, None),

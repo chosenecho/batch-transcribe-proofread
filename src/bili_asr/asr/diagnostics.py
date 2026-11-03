@@ -9,6 +9,9 @@ from copy import deepcopy
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
+from .constants import COVERAGE_MIN
+from .edge_coverage import diagnostic_edge_coverage
+
 
 def runtime_environment() -> dict[str, Any]:
     packages = {}
@@ -82,7 +85,13 @@ def assemble_diagnostics(passes: list[dict[str, Any]]) -> dict[str, Any]:
     passes = deepcopy(passes)
     final = passes[-1] if passes else {}
     flags = sorted({flag for chunk in final.get("chunks", []) for flag in chunk.get("flags", [])})
-    if final.get("span_coverage_short"):
+    span = final.get("coverage_cue_span")
+    edge = diagnostic_edge_coverage(
+        {"execution_policy": final.get("execution_policy"), "passes": [final]},
+        [{"start": span[0], "end": span[1]}] if isinstance(span, list) and len(span) == 2 else [],
+        decoded_s=final.get("decoded_s"), minimum=COVERAGE_MIN)
+    explained_edge = edge is not None and not edge["coverage_short"]
+    if final.get("span_coverage_short") and not explained_edge:
         flags.append("span-coverage-short")
     complete = bool(final.get("completed"))
     if not complete or not final.get("decoded_s"):

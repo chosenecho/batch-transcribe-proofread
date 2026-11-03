@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import bili_asr.asr.constants as _dependency_constants
 import bili_asr.asr.hotwords as _dependency_hotwords
@@ -105,8 +105,14 @@ class ASRConfig:
     compile_max_buckets: int = 2
     compile_max_input_tokens: int = 4096
     compile_max_output_tokens: int = 2048
+    alignment_decoder: str = field(default_factory=lambda: os.getenv("BILI_ASR_ALIGNMENT_DECODER", "default"))
+    coverage_policy: str = "full-span"
 
     def __post_init__(self) -> None:
+        if self.alignment_decoder not in ("default", "processor", "monotone-max-score", "monotone-max-score/v1"):
+            raise ValueError("unsupported alignment decoder")
+        if self.coverage_policy not in ("full-span", "quiet-edges"):
+            raise ValueError("unsupported coverage policy")
         for name in ("asr_attention", "aligner_attention"):
             if getattr(self, name) not in ("default", "eager", "sdpa", "flash_attention_2"):
                 raise ValueError(f"{name} is unsupported")

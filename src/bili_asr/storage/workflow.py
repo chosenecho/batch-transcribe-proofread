@@ -280,7 +280,12 @@ class WorkflowRepository:
         if exclude_job_ids:
             filters += " AND j.job_id NOT IN (SELECT value FROM json_each(?))"
             parameters.append(json.dumps(exclude_job_ids))
-        return self.connection.execute(
+        from bili_asr.storage.workflow_batches import claim_filter, require_frozen_member
+        batch_filter = claim_filter(self.connection)
+        if batch_filter:
+            filters += batch_filter
+            parameters.append(now)
+        row = self.connection.execute(
             "SELECT j.* FROM workflow_jobs AS j WHERE " + status + """ AND j.available_at <= ?
             AND NOT EXISTS (
                 SELECT 1 FROM workflow_job_dependencies AS d
@@ -289,6 +294,9 @@ class WorkflowRepository:
             )""" + filters + " ORDER BY j.priority DESC,j.created_at,j.job_id LIMIT 1",
             parameters,
         ).fetchone()
+        if batch_filter and row is not None:
+            require_frozen_member(self.connection, row)
+        return row
 
     def peek_candidate(self, *, kinds: Iterable[JobKind] | None = None, exclude_job_ids: tuple[str, ...] = ()) -> WorkflowJob | None:
         """Read a hint for preparation; does not acquire a lease or recover attempts."""

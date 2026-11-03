@@ -36,6 +36,9 @@ def test_universal_identity_is_not_fake_bilibili_and_has_case_safe_artifact_keys
         assert artifact_stem(repository.part(first)["content_ref"]).casefold() != artifact_stem(repository.part(second)["content_ref"]).casefold()
         selection = resolve_workflow_selection(session.connection, part_ids=[first, second])
         assert len(selection.targets) == 2 and all(target.work_id.startswith("youtube:") for target in selection.targets)
+        all_parts = resolve_workflow_selection(session.connection, all_parts=True)
+        assert all_parts.part_ids == selection.part_ids
+        assert not all_parts.excluded_gone
         with pytest.raises(sqlite3.IntegrityError, match="source part identity"):
             session.connection.execute("UPDATE video_parts SET page_index=1 WHERE video_part_id=?", (first,))
         session.connection.rollback()

@@ -53,3 +53,9 @@ CI 运行明确列出的处理链验收和语法检查。完整历史兼容性�
 - Windows 测试报告明确按 UTF-8 读取；调度所需 tzdata 不再依赖已移除采集包的间接安装。
 - 恢复检查明确将历史音频下载／字幕采集任务标为 handler:collection-removed，不再建议安装下载器或提供源站凭据。
 - 最终清单的 finalInventory 记录除清单自身外各文件的 Git 暂存内容 SHA-256；included 继续记录复制时的原始文件快照。
+
+## 后续处理功能同步（2026-11-04）
+
+处理能力已按上游固定提交 `cd09dd9ba79c7cbe9c818544a8b85051c3dea365` 更新，范围、适配、来源清单和验证结果见 [本次同步记录](upstream-sync-20261104.md)。以上首次拆分记录是当时快照，不表示当前验收规模。
+
+本次扩展处理链验收为 1265 passed、9 skipped、1 deselected，另补入的 ASR batching / quality foundation 53 项通过。旧 schema 升级与快照用例 `test_upgrade_target_indexes_survive_full_snapshot_check_and_restore` 已通过并重新纳入验收；Windows 的 SQLite URI 旧库读取问题仍按明确用例排除，Linux 不排除。原始拆分清单继续保留，未用本次哈希覆盖其历史记录。

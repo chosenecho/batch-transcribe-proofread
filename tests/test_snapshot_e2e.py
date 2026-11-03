@@ -80,7 +80,16 @@ def _seed_archive(root: Path, *, artifact_root: Path | None = None) -> dict[str,
         profile_id = workflow.register_profile(PORTABLE_PROFILE)
         workflow.plan(part_ids=[1], policy=AsrPolicy.ALL, profile_id=profile_id)
         ids = {}
+        # New plans contain processing jobs only. Construct legacy records
+        # explicitly to verify that snapshots retain collection history.
         for kind in (JobKind.SUBTITLE, JobKind.AUDIO):
+            with workflow._write_transaction():
+                legacy_id, _ = workflow._ensure_job(kind=kind, video_part_id=1,
+                    profile_id=None, policy_key=None, payload={"video_part_id": 1},
+                    dedupe_key=f"historical:{kind.value}:1")
+                connection.execute(
+                    "INSERT INTO workflow_job_dependencies(job_id, prerequisite_job_id) "
+                    "SELECT job_id, ? FROM workflow_jobs WHERE kind='asr'", (legacy_id,))
             job = workflow.claim("original-device", kinds=(kind,))
             assert job is not None
             result = {"outcome": "absent"} if kind is JobKind.SUBTITLE else {
@@ -115,7 +124,8 @@ def _reject_command(capsys, *argv: str) -> str:
 
 
 def _resume_offline(root: Path, monkeypatch, capsys) -> list[Path]:
-    from bili_asr import asr, audio
+    from bili_asr import asr
+    import requests
     from bili_asr.workflow_runtime import ArchiveWorkflowHandlers
 
     transcribed_paths = []
@@ -124,12 +134,13 @@ def _resume_offline(root: Path, monkeypatch, capsys) -> list[Path]:
     def forbid_completed_job(*args, **kwargs):
         pytest.fail("the restored workflow repeated a completed acquisition")
 
-    def transcribe(runner, audio_path, *, paired_subtitle_text):
+    def transcribe(runner, audio_path, *, paired_subtitle_text, checkpoint_path):
         path = Path(audio_path)
         assert path != original_path and path.suffix == original_path.suffix
         assert path.read_bytes() == AUDIO_BYTES
         assert original_path.read_bytes() == AUDIO_BYTES
         assert paired_subtitle_text is None
+        assert Path(checkpoint_path).parent == root.resolve() / ".asr-checkpoints"
         # ASR receives a verified private copy; the downloaded artifact remains
         # the evidence represented by the portable snapshot.
         transcribed_paths.append(original_path)
@@ -143,8 +154,7 @@ def _resume_offline(root: Path, monkeypatch, capsys) -> list[Path]:
             "decoded_s": 1.0, "produced_s": 1.0, "coverage": 1.0,
             "coverage_min": .9, "coverage_short": False})
 
-    monkeypatch.setattr(audio, "download_audio", forbid_completed_job)
-    monkeypatch.setattr(ArchiveWorkflowHandlers, "subtitle", forbid_completed_job)
+    monkeypatch.setattr(requests.sessions.Session, "request", forbid_completed_job)
     monkeypatch.setattr(ArchiveWorkflowHandlers, "_runner", restored_runner)
     monkeypatch.setattr(asr, "two_pass_transcribe", transcribe)
     assert main(["workflow", "run", "--archive-root", str(root), "--worker-id", "new-device"]) == 0

@@ -13,6 +13,24 @@ from bili_asr.diagnostics import write_stderr
 def add_archive_parser(subparsers: argparse._SubParsersAction) -> None:
     parser = subparsers.add_parser("archive", help="Initialize, inspect or explicitly convert an archive")
     actions = parser.add_subparsers(dest="archive_action", required=True)
+    batches = actions.add_parser("install-workflow-batches", help="Explicitly enable persistent batch scheduling under maintenance lock")
+    batches.add_argument("--archive-root", required=True)
+    batches.set_defaults(database_policy=None)
+    packages = actions.add_parser("install-publication-packages", help="Explicitly enable complete publication packages under maintenance lock")
+    packages.add_argument("--archive-root", required=True)
+    packages.set_defaults(database_policy=None)
+    storage = actions.add_parser(
+        "storage-report", help="Read-only logical and page storage composition of an archive copy",
+    )
+    storage.add_argument("--archive-root", required=True,
+                         help="Archive directory or explicit archive.db copy; prefer a verified snapshot")
+    storage.add_argument("--samples", type=int, default=8,
+                         help="Compression sample values per large column (1-64)")
+    storage.add_argument("--top-tables", type=int, default=20,
+                         help="Tables whose dated growth is bucketed (1-100)")
+    storage.add_argument("--top-columns", type=int, default=8,
+                         help="Largest columns measured for exact duplicates and compression (1-100)")
+    storage.set_defaults(database_policy=None)
     preflight = actions.add_parser(
         "migration-preflight", help="Validate and inventory a stopped, checkpointed legacy archive",
     )
@@ -72,7 +90,29 @@ def _cmd_archive(args: argparse.Namespace) -> int:
     from bili_asr.services.archive_migration import initialize_archive, migrate_archive, check_migrated_archive, migrate_snapshot
 
     try:
-        if args.archive_action == "derive-vtt":
+        if args.archive_action == "storage-report":
+            from bili_asr.archive_modes import ArchiveAccessMode, ArchiveContract
+            from bili_asr.archive_session import ArchiveSession
+            from bili_asr.services.storage_report import storage_report
+            with ArchiveSession(args.archive_root, mode=ArchiveAccessMode.READ,
+                                contract=ArchiveContract.NONE) as session:
+                report = storage_report(session.connection, sample_rows=args.samples,
+                                        top_tables=args.top_tables,
+                                        top_columns=args.top_columns)
+        elif args.archive_action in {"install-publication-packages", "install-workflow-batches"}:
+            from bili_asr.archive_session import ArchiveSession, ArchiveAccessMode
+            from bili_asr.storage.publication_packages import install_packages
+            from contextlib import closing
+            from bili_asr.storage.database import connect_database
+            root = Path(args.archive_root)
+            with ArchiveSession(root, mode=ArchiveAccessMode.MAINTENANCE).access():
+                with closing(connect_database(root / "archive.db", must_exist=True)) as connection:
+                    if args.archive_action == "install-workflow-batches":
+                        from bili_asr.storage.workflow_batches import install_batches
+                        report = install_batches(connection)
+                    else:
+                        report = install_packages(connection)
+        elif args.archive_action == "derive-vtt":
             from bili_asr.services.transcript_derivatives import export_transcript_vtt
             report = export_transcript_vtt(Path(args.source_root), transcript_id=args.transcript_id, output=args.output,
                 artifact_root=Path(args.source_artifact_root) if args.source_artifact_root else None)
@@ -102,7 +142,9 @@ def _cmd_archive(args: argparse.Namespace) -> int:
     except sqlite3.Error:
         write_stderr(f"archive {args.archive_action}: database validation failed")
         return 1
-    if getattr(args, "format", "json") == "json":
+    if args.archive_action == "storage-report":
+        print(json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2))
+    elif getattr(args, "format", "json") == "json":
         print(json.dumps(report, ensure_ascii=False, sort_keys=True))
     else:
         totals = report["totals"]

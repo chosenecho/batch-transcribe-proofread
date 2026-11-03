@@ -13,7 +13,7 @@ from bili_asr.asr.config import ASRConfig
 from bili_asr.asr.runner import ASRRunner, two_pass_transcribe
 from bili_asr.cli.workflow import _cmd_workflow, add_workflow_parser
 from bili_asr.storage import AsrProfile, WorkflowRepository
-from test_asr_quality_foundation import database as database  # Shared archive fixture.
+from test_asr_quality_foundation import _register_local_audio, database as database
 from test_asr_qwen import _Inputs, _runner, _units
 
 
@@ -231,6 +231,7 @@ def test_default_profile_canonical_bytes_preserve_historical_digest(database):
 
 
 def test_cli_batch_policy_freezes_in_profile(database, tmp_path):
+    _register_local_audio(database, tmp_path)
     parser = argparse.ArgumentParser()
     add_workflow_parser(parser.add_subparsers(), archive_root=str(tmp_path))
     args = parser.parse_args(["workflow", "plan", "--part-id", "1", "--device", "cpu",

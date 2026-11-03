@@ -4,7 +4,7 @@ import hashlib
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import closing
+from contextlib import closing, contextmanager
 from threading import Event
 from types import SimpleNamespace
 
@@ -20,6 +20,23 @@ from bili_asr.storage.artifact_catalog import ArtifactCatalog
 from bili_asr.workflow_errors import JobExecutionError
 from tests.support.artifact_online import archive as online_archive
 from tests.test_workflow_control_plane import _seed_part
+
+
+def test_unavailable_write_observer_refuses_inference_and_releases_capacity(audio_source, monkeypatch):
+    connection, roots, source, content, dependency = audio_source
+    @contextmanager
+    def unavailable(path):
+        raise OSError("observer limit")
+        yield  # pragma: no cover - retain contextmanager protocol
+    monkeypatch.setattr(inputs, "change_watch", unavailable)
+    with pytest.raises(JobExecutionError) as error:
+        with inputs.verified_audio_input(connection, roots, 1, dependency, retained=None, checkpoint=lambda: None):
+            pytest.fail("input without a write observer must not reach inference")
+    assert error.value.error_code == "audio_generation_changed"
+    assert error.value.safe_details["reason"] == "write-observation-unavailable"
+    assert source.read_bytes() == content
+    assert not list(source.parent.glob(".workflow-audio-input-*"))
+    assert not list((roots.write_base / ".asr-input-reservations").glob("*.json"))
 
 
 @pytest.fixture

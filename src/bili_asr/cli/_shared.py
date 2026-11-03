@@ -43,7 +43,7 @@ def _open_read_repository(command: str, archive_root: str) -> "MetadataRepositor
 
     path = _metadata_database_path(archive_root)
     if not os.path.isfile(path):
-        write_stderr(f"{command}: no archive database at {archive_root}; run fetch-meta to create it")
+        write_stderr(f"{command}: no archive database at {archive_root}; use archive init and input import")
         return None
     try:
         return MetadataRepository(open_archive_connection(archive_root, mode=ArchiveAccessMode.READ))

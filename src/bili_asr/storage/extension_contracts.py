@@ -14,19 +14,32 @@ def _storage_key_parts(value):
         raise ValueError("storage key must be a relative string")
     return portable_artifact_parts("documents/" + value)[1:]
 
-@lru_cache(maxsize=1)
-def artifact_catalog_objects() -> dict[str, tuple[str, str]]:
+@lru_cache(maxsize=2)
+def artifact_catalog_objects(version: int = 1) -> dict[str, tuple[str, str]]:
     from bili_asr.storage.schema_contract import schema_resource as _resource
     with sqlite3.connect(":memory:") as reference:
         reference.executescript(_resource("schema-artifact-storage.sql"))
+        if version == 2:
+            reference.executescript(_resource("schema-artifact-storage-v2-upgrade.sql"))
         return {row[0]: (row[1], row[2]) for row in reference.execute(
             "SELECT name,type,sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%'")}
+
+
+def artifact_catalog_version(connection: sqlite3.Connection) -> int:
+    from bili_asr.storage.schema_contract import SchemaContractError
+    if connection.execute("SELECT 1 FROM sqlite_master WHERE name='artifact_storage_contract' AND type='table'").fetchone() is None:
+        return 0
+    rows = [tuple(row) for row in connection.execute("SELECT singleton,version FROM artifact_storage_contract")]
+    if rows not in ([(1, 1)], [(1, 2)]):
+        raise SchemaContractError("artifact-storage: unsupported contract marker")
+    return rows[0][1]
 
 
 def require_artifact_catalog(connection: sqlite3.Connection, *, required: bool = False) -> bool:
     """Read-only verification; reject partial, unknown and altered extensions."""
     from bili_asr.storage.schema_contract import SchemaContractError, normalize_schema_sql as _normalize_manuscript_sql
-    expected = artifact_catalog_objects()
+    version = artifact_catalog_version(connection)
+    expected = artifact_catalog_objects(version or 1)
     actual = {row[0]: (row[1], row[2]) for row in connection.execute(
         "SELECT name,type,sql FROM sqlite_master WHERE sql IS NOT NULL")}
     if not expected.keys() & actual.keys():
@@ -37,8 +50,12 @@ def require_artifact_catalog(connection: sqlite3.Connection, *, required: bool =
         current = actual.get(name)
         if current is None or current[0] != kind or _normalize_manuscript_sql(current[1]) != _normalize_manuscript_sql(sql):
             raise SchemaContractError(f"artifact-storage-v1: missing or altered object: {name}")
-    if [tuple(row) for row in connection.execute("SELECT singleton,version FROM artifact_storage_contract")] != [(1, 1)]:
-        raise SchemaContractError("artifact-storage-v1: unsupported contract marker")
+    if version == 2:
+        if connection.execute(
+            "SELECT 1 FROM artifact_targets t LEFT JOIN artifact_remote_instances i USING(target_id) "
+            "WHERE t.kind='s3' AND i.instance_id IS NULL LIMIT 1"
+        ).fetchone():
+            raise SchemaContractError("artifact-storage-v2: S3 target instance binding is missing")
     if connection.execute(
         "SELECT 1 FROM artifact_audio_bindings b JOIN artifact_objects o USING(object_id) "
         "JOIN audio_objects a USING(audio_id) WHERE o.object_id!=a.sha256 OR o.byte_size!=a.byte_size LIMIT 1"

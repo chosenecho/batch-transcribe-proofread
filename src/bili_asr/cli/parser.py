@@ -14,6 +14,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--version", action="version", version="%(prog)s 0.1.0")
     subparsers = parser.add_subparsers(dest="command")
+    from bili_asr.cli.transcribe import add_transcribe_parser
+    add_transcribe_parser(subparsers)
+
+    from bili_asr.cli.delivery import add_delivery_parser
+    add_delivery_parser(subparsers, archive_root=DEFAULT_ARCHIVE_ROOT)
+    from bili_asr.cli.production import add_production_parser
+    add_production_parser(subparsers)
 
     from bili_asr.cli.workflow import add_workflow_parser
     add_workflow_parser(subparsers, archive_root=DEFAULT_ARCHIVE_ROOT)

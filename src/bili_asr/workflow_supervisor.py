@@ -126,9 +126,9 @@ class WorkerSupervisor:
                  warmup_audio: str | None = None, warmup_timeout_seconds: float = 300,
                  cache_root: str | None = None, cache_max_bytes: int = 10 * 1024**3,
                  storage_targets: list[str] | None = None,
-                 context=None, controller: Callable = _controller):
+                 context=None, controller: Callable = _controller, observer: Callable[[dict], None] | None = None):
         root = Path(archive_root).resolve(strict=True)
-        if any(role not in {"asr", "cpu", "editorial", "acquisition"} for role in slots):
+        if any(role not in {"asr", "cpu", "editorial"} for role in slots):
             raise ValueError("unsupported worker role")
         if any(type(count) is not int or count < 0 or count > 32 for count in slots.values()) or not sum(slots.values()):
             raise ValueError("worker slot counts must be 0..32 with at least one active slot")
@@ -160,6 +160,15 @@ class WorkerSupervisor:
         self.slots = [_Slot(role, index) for role, count in slots.items() for index in range(count)]
         self.stop = threading.Event()
         self.identity = uuid4().hex[:12]
+        self.observer = observer
+
+    def observe(self, state: str) -> None:
+        if self.observer is not None:
+            self.observer({"state": state, "supervisor_id": self.identity,
+                "observed_at": time.time(), "slots": [
+                    {"role": slot.role, "index": slot.index, "restarts": slot.restarts,
+                     "alive": slot.process is not None and slot.process.is_alive()}
+                    for slot in self.slots]})
 
     def _draining(self):
         return self.stop.is_set() or (self.options["drain_file"] is not None and Path(self.options["drain_file"]).exists())
@@ -204,10 +213,8 @@ class WorkerSupervisor:
                         os.kill(slot.process.pid, signal.SIGTERM)
                     except ProcessLookupError:
                         pass
-                else:
-                    # Windows has no equivalent to SIGTERM delivery to a Python handler.
-                    # The normal drain-file path is graceful; terminate is the bounded fallback.
-                    slot.process.terminate()
+                # On Windows the shared drain file is the cooperative signal.
+                # Give controllers time to observe it before the bounded kill below.
         deadline = time.monotonic() + self.options["drain_timeout"] + _DRAIN_CLEANUP_SECONDS
         while any(slot.process is not None and slot.process.is_alive() for slot in self.slots):
             if time.monotonic() >= deadline:
@@ -240,11 +247,22 @@ class WorkerSupervisor:
                 with ArchiveSession(self.root, mode=ArchiveAccessMode.READ):
                     pass
                 try:
+                    self.observe("running")
+                    next_observation = time.monotonic() + 1
                     while not self._draining():
                         self.tick()
+                        if time.monotonic() >= next_observation:
+                            self.observe("running")
+                            next_observation = time.monotonic() + 1
                         self.stop.wait(0.1)
                 finally:
-                    self.close()
+                    try:
+                        self.observe("draining")
+                    finally:
+                        try:
+                            self.close()
+                        finally:
+                            self.observe("stopped")
         finally:
             for signum, previous in old_signals.items():
                 signal.signal(signum, previous)

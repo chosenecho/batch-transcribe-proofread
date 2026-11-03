@@ -164,7 +164,8 @@ def test_a_symlinked_configured_root_is_refused(tmp_path):
     with pytest.raises(OSError) as write_error:
         open_audio_directory(unvalidated.write_base, create=True)
     # `O_NOFOLLOW` on the root: Linux reports ENOTDIR once `O_DIRECTORY` is also set.
-    assert write_error.value.errno in (errno.ENOTDIR, errno.ELOOP)
+    expected_errors = (errno.ENOTDIR, errno.ELOOP) if os.name == "posix" else (errno.ENOTSUP,)
+    assert write_error.value.errno in expected_errors
 
 
 def test_an_explicit_value_equal_to_the_archive_root_is_the_identity_case(tmp_path):

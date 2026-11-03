@@ -19,6 +19,8 @@ import bili_asr.asr.config as _dependency_config
 import bili_asr.asr.constants as _dependency_constants
 import bili_asr.asr.coverage as _dependency_coverage
 import bili_asr.asr.diagnostics as _dependency_diagnostics
+from bili_asr.asr.constrained_alignment import decode_alignment
+from bili_asr.asr.edge_coverage import covered_edges, measure_edges
 import bili_asr.asr.errors as _dependency_errors
 import bili_asr.asr.hotwords as _dependency_hotwords
 from bili_asr.asr.provenance import _redact
@@ -354,14 +356,18 @@ class ASRRunner:
             logits = self.backend.align(models.aligner, inputs)
             self._trace_stage("align_forward", started)
         started = time.perf_counter()
-        units = list(models.aligner_processor.decode_forced_alignment(
+        units, decoding = decode_alignment(models.aligner_processor,
             logits=logits,
             input_ids=inputs["input_ids"],
             word_lists=word_lists,
             timestamp_token_id=models.aligner.config.timestamp_token_id,
-        )[0])
+            durations=[self._alignment_duration_s if getattr(self, "_alignment_duration_s", None) is not None
+                       else len(audio) / _dependency_constants.SAMPLE_RATE],
+            policy=self.config.alignment_decoder,
+        )
+        self._last_alignment_decode = decoding[0]
         self._trace_stage("align_postprocess", started)
-        return units
+        return list(units[0])
 
     def characters(self) -> dict[str, Any] | None:
         """The character-level record for the **last** :meth:`transcribe`, or ``None``.
@@ -404,10 +410,14 @@ class ASRRunner:
         with open(path, "rb") as source:
             for block in iter(lambda: source.read(1024 * 1024), b""):
                 digest.update(block)
-        return {"audio_sha256": digest.hexdigest(), "chunk_count": chunk_count,
+        identity = {"audio_sha256": digest.hexdigest(), "chunk_count": chunk_count,
                 "chunk_seconds": self.config.chunk_seconds,
                 "model_name": self.config.model_name, "model_revision": self.config.model_revision,
                 "aligner_name": self.config.aligner_name, "aligner_revision": self.config.aligner_revision}
+        if self.config.alignment_decoder != "default" or self.config.coverage_policy != "full-span":
+            identity["output_policy"] = {"schema_version": 1,
+                "alignment_decoder": self.config.alignment_decoder, "coverage_policy": self.config.coverage_policy}
+        return identity
 
     def transcribe(self, audio_path: str, *, bust_cache: bool = False,
                    checkpoint_path: str | os.PathLike[str] | None = None) -> list[dict[str, Any]]:
@@ -513,6 +523,8 @@ class ASRRunner:
 
             report["timings_s"]["audio_prepare"] = time.perf_counter() - audio_clock
             self._trace_stage("audio_prepare", audio_clock)
+            if self.config.coverage_policy == "quiet-edges":
+                report["quiet_edges"] = measure_edges(samples, _dependency_constants.SAMPLE_RATE)
             split_clock = time.perf_counter()
             chunks = _dependency_audio._split_audio(samples, _dependency_constants.SAMPLE_RATE, self.config.chunk_seconds)
             report["timings_s"]["split"] = time.perf_counter() - split_clock
@@ -654,12 +666,23 @@ class ASRRunner:
                     languages.add(language.strip())
                 align_clock = time.perf_counter()
                 if batch_result is None:
-                    raw_units = self._align_chunk(models, audio, text, language)
+                    self._last_alignment_decode = None
+                    self._alignment_duration_s = len(chunk) / _dependency_constants.SAMPLE_RATE
+                    try:
+                        raw_units = self._align_chunk(models, audio, text, language)
+                    finally:
+                        self._alignment_duration_s = None
+                    decoding = self._last_alignment_decode
                     chunk_report["align_s"] = time.perf_counter() - align_clock
                     self._trace_stage("align", align_clock, chunk_index=chunk_index)
                 else:
                     raw_units = batch_result["raw_units"]
+                    decoding = batch_result.get("alignment_decode")
                     chunk_report["align_batch_index"] = batch_result.get("align_batch_index")
+                if self.config.alignment_decoder != "default":
+                    if not decoding:
+                        raise ValueError("alignment decode evidence unavailable")
+                    chunk_report["alignment_decode"] = decoding
                 _progress("aligned")
                 chunk_report["alignment"] = _dependency_diagnostics.alignment_evidence(
                     raw_units, len(audio) / _dependency_constants.SAMPLE_RATE
@@ -705,6 +728,11 @@ class ASRRunner:
             # is deliberately unchanged.
             self._last_coverage = _dependency_coverage._coverage_record(decoded_seconds, cues)
             report["span_coverage_short"] = bool(self._last_coverage and self._last_coverage["coverage_short"])
+            if self.config.coverage_policy == "quiet-edges" and cues:
+                report["coverage_cue_span"] = [min(c["start"] for c in cues), max(c["end"] for c in cues)]
+                report["edge_coverage"] = covered_edges(report.get("quiet_edges"), decoded_s=decoded_seconds,
+                    cue_start=min(c["start"] for c in cues), cue_end=max(c["end"] for c in cues),
+                    minimum=_dependency_constants.COVERAGE_MIN)
             report["timings_s"]["decode"] = report.get("batch_timings_s", {}).get("decode", sum(c.get("decode_s", 0.0) for c in report["chunks"]))
             report["timings_s"]["align"] = report.get("batch_timings_s", {}).get("align", sum(c.get("align_s", 0.0) for c in report["chunks"]))
             report["completed"] = True
@@ -878,6 +906,8 @@ class ASRRunner:
         }
         if config.model_dtype != "bfloat16" or config.aligner_dtype != "bfloat16":
             provenance.update(model_dtype=config.model_dtype, aligner_dtype=config.aligner_dtype)
+        if config.alignment_decoder != "default" or config.coverage_policy != "full-span":
+            provenance.update(alignment_decoder=config.alignment_decoder, coverage_policy=config.coverage_policy)
         if self._hotwords_dropped:
             provenance["hotword_dropped_no_evidence"] = ",".join(
                 _redact(term) for term in self._hotwords_dropped

@@ -240,35 +240,32 @@ def export_publications(
             document.decode("utf-8")
             files[entry["file"]] = document
             files[entry["reviewFile"]] = review_document
-            package_row = connection.execute(
-                "SELECT relative_path,package_sha256 FROM publication_packages WHERE release_id=?",
-                (release["release_id"],),
-            ).fetchone()
-            if package_row is None:
-                raise ExportSnapshotError("release package is missing")
-            from bili_asr.services.artifact_readers import read_retained_text
-            package = json.loads(read_retained_text(connection, package_row["relative_path"],
-                                                    package_row["package_sha256"], artifact_roots))
-            if package.get("schema") != "publication-package/v1" or package.get("edition_id") != edition["edition_id"]:
-                raise ExportSnapshotError("release package identity is invalid")
-            asr_files = []
-            for role, item in package["artifacts"]["asr_transcript"]["artifacts"].items():
-                relative = item["path"]
-                output_path = f"transcripts/part-{edition['video_part_id']}/{Path(relative).name}"
-                data = read_retained_text(connection, relative, item["sha256"], artifact_roots)
-                files[output_path] = data
-                asr_files.append({"role": role, "path": output_path, "sha256": item["sha256"]})
-            products.append({
-                "releaseId": release["release_id"], "editionId": edition["edition_id"],
-                "metadata": package["metadata"],
-                "artifacts": [
-                    {"type": "asr-transcript", "files": asr_files},
-                    {"type": "ai-comparison", "files": [{"path": entry["reviewFile"],
-                        "sha256": hashlib.sha256(review_document).hexdigest()}]},
-                    {"type": "ai-result", "files": [{"path": entry["file"],
-                        "sha256": hashlib.sha256(document).hexdigest()}]},
-                ],
-            })
+            from bili_asr.storage.publication_packages import package_record
+            package_row = package_record(connection, release["release_id"])
+            if package_row is not None:
+                from bili_asr.services.artifact_readers import read_retained_text
+                package = json.loads(read_retained_text(connection, package_row["relative_path"],
+                                                        package_row["package_sha256"], artifact_roots))
+                if package.get("schema") != "publication-package/v1" or package.get("edition_id") != edition["edition_id"]:
+                    raise ExportSnapshotError("release package identity is invalid")
+                asr_files = []
+                for role, item in package["artifacts"]["asr_transcript"]["artifacts"].items():
+                    relative = item["path"]
+                    output_path = f"transcripts/part-{edition['video_part_id']}/{Path(relative).name}"
+                    data = read_retained_text(connection, relative, item["sha256"], artifact_roots)
+                    files[output_path] = data
+                    asr_files.append({"role": role, "path": output_path, "sha256": item["sha256"]})
+                products.append({
+                    "releaseId": release["release_id"], "editionId": edition["edition_id"],
+                    "metadata": package["metadata"],
+                    "artifacts": [
+                        {"type": "asr-transcript", "files": asr_files},
+                        {"type": "ai-comparison", "files": [{"path": entry["reviewFile"],
+                            "sha256": hashlib.sha256(review_document).hexdigest()}]},
+                        {"type": "ai-result", "files": [{"path": entry["file"],
+                            "sha256": hashlib.sha256(document).hexdigest()}]},
+                    ],
+                })
             articles.append(entry)
     articles.sort(key=lambda entry: (-entry["publishedAt"], entry["videoPartId"]))
     version = _catalog_version(articles, contract_profile)

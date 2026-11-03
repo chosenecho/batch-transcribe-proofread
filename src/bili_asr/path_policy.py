@@ -34,7 +34,7 @@ def open_audio_directory(
 ) -> int:
     """Open the archive audio directory without following either component."""
     if os.name != "posix" or not hasattr(os, "O_DIRECTORY") or not hasattr(os, "O_NOFOLLOW"):
-        raise OSError("descriptor-safe audio operations are unsupported")
+        raise OSError(errno.ENOTSUP, "descriptor-safe audio operations are unsupported")
     root_fd = os.open(
         os.fspath(archive_root), os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
     )

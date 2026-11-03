@@ -40,6 +40,29 @@ def _join_text(left: str, right: str) -> str:
     return left + right
 
 
+def _unit_text_end(text: str, position: int, unit_text: str) -> int | None:
+    """Match one unit, allowing only omitted punctuation/space inside it.
+
+    A processor can merge ``word，word`` into ``wordword``. Match the entire
+    unit before consuming anything; a genuine character difference must still
+    be reported by threading_evidence, never skipped to find a later match.
+    """
+    if text.startswith(unit_text, position):
+        return position + len(unit_text)
+    if text[position] != unit_text[0]:
+        return None
+    cursor = position
+    for character in unit_text:
+        while cursor < len(text) and text[cursor] != character and (
+            text[cursor].isspace() or unicodedata.category(text[cursor]).startswith("P")
+        ):
+            cursor += 1
+        if cursor == len(text) or text[cursor] != character:
+            return None
+        cursor += 1
+    return cursor
+
+
 def _thread_text(text: str, units: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Merge the recognised text's marks back onto the aligned units.
 
@@ -51,6 +74,10 @@ def _thread_text(text: str, units: list[dict[str, Any]]) -> list[dict[str, Any]]
     recognised text verbatim" true; without it both the marks and the sentence-ending rule that
     closes cues on them are lost (measured: 287 vs ~983 cues on a 47-minute item, and 1 224 marks
     missing).
+    A unit spanning omitted punctuation/space stays one piece with its original
+    interval and the original text. Its internal boundaries are unknown: do not
+    split it or interpolate word/mark timestamps. Separators outside a unit
+    retain the existing adjacent-instant rule.
     """
 
     pieces: list[dict[str, Any]] = []
@@ -59,28 +86,15 @@ def _thread_text(text: str, units: list[dict[str, Any]]) -> list[dict[str, Any]]
     while position < len(text):
         unit = units[index] if index < len(units) else None
         unit_text = _clean_text(unit.get("text", "")) if isinstance(unit, dict) else ""
-        matched_end = position
-        if unit_text:
-            # The processor can remove punctuation inside a Latin token without
-            # splitting it ("do，just" becomes "dojust"). Match that exact
-            # lexical sequence while keeping the source marks and whitespace.
-            for character in unit_text:
-                while (matched_end > position and matched_end < len(text) and text[matched_end] != character
-                       and (text[matched_end].isspace()
-                            or unicodedata.category(text[matched_end])[0] in {"P", "Z", "C"})):
-                    matched_end += 1
-                if matched_end >= len(text) or text[matched_end] != character:
-                    matched_end = position
-                    break
-                matched_end += 1
-        if unit_text and matched_end > position:
+        unit_end = _unit_text_end(text, position, unit_text) if unit_text else None
+        if unit_end is not None:
             pieces.append({
-                "text": text[position:matched_end],
+                "text": text[position:unit_end],
                 "start": float(unit["start_time"]),
                 "end": float(unit["end_time"]),
                 "timing_source": "aligned",
             })
-            position = matched_end
+            position = unit_end
             index += 1
             continue
         anchor = pieces[-1]["end"] if pieces else (

@@ -27,6 +27,20 @@ from bili_asr.storage import (
     WorkflowRepository,
     open_database,
 )
+from bili_asr.storage.workflow_outputs import record_audio
+
+
+def _register_local_audio(connection, root, *, key="audio/fixture.wav",
+                          data=b"offline fixture; decoder is substituted"):
+    media = root / key
+    media.parent.mkdir(parents=True, exist_ok=True)
+    media.write_bytes(data)
+    with connection:
+        connection.execute("BEGIN")
+        record_audio(connection, part_id=1, sha256=hashlib.sha256(data).hexdigest(),
+            byte_size=len(data), media_format=media.suffix.lstrip("."),
+            duration_ms=1000, storage_key=key, target_id="local")
+    return media
 
 
 @pytest.fixture
@@ -100,6 +114,7 @@ def test_nonfinite_or_invalid_parameters_are_rejected(name, value):
 
 
 def test_cli_precedence_and_snapshot_freeze(database, tmp_path, monkeypatch):
+    _register_local_audio(database, tmp_path)
     monkeypatch.setenv("BILI_ASR_CHUNK_SECONDS", "invalid")
     monkeypatch.setenv("BILI_ASR_INFERENCE_TIMEOUT_SECONDS", "72")
     monkeypatch.setenv("BILI_ASR_ALIGNER_REVISION", "aligner-commit")
@@ -247,14 +262,8 @@ def test_workflow_persists_diagnostics_and_uses_frozen_parameters(database, tmp_
         "quality", "model", device=device, chunk_seconds=60,
         inference_timeout_seconds=72, aligner_revision="align-commit"))
     repository.plan(part_ids=[1], policy=AsrPolicy.ALL, profile_id=profile_id)
-    audio_path = tmp_path / "audio" / "test.m4a"
-    audio_path.parent.mkdir()
-    audio_path.write_bytes(b"fake audio; decoder is substituted")
+    audio_path = _register_local_audio(database, tmp_path, key="audio/test.m4a")
     audio_sha256 = hashlib.sha256(audio_path.read_bytes()).hexdigest()
-    for _ in range(2):
-        job = repository.claim("test", kinds=(JobKind.SUBTITLE, JobKind.AUDIO))
-        repository.finish(job.job_id, worker_id="test",
-                          result={"storage_key": "audio/test.m4a", "sha256": audio_sha256} if job.kind is JobKind.AUDIO else {})
     job = repository.claim("test")
     assert job.kind is JobKind.ASR
     evidence = assemble_diagnostics([{"completed": True, "decoded_s": 1, "chunks": [],

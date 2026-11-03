@@ -24,11 +24,36 @@ def add_workflow_parser(subparsers: argparse._SubParsersAction, *, archive_root:
         help="Plan and run ASR and editorial jobs from imported local inputs",
     )
     actions = parser.add_subparsers(dest="workflow_action", required=True)
-    plan = actions.add_parser("plan", help="Create idempotent jobs for stored BVIDs or explicit video-part IDs")
+    batch = actions.add_parser("batch", help="Manage persistent explicit job batches")
+    batch.add_argument("--archive-root", default=archive_root)
+    batch_actions = batch.add_subparsers(dest="batch_action", required=True)
+    create = batch_actions.add_parser("create")
+    create.add_argument("--job-id", action="append", required=True)
+    create.add_argument("--workers", type=int, default=10)
+    create.add_argument("--actor", required=True)
+    create.add_argument("--reason", required=True)
+    extract = batch_actions.add_parser("extract")
+    extract.add_argument("--batch-id", required=True)
+    extract.add_argument("--job-id", action="append", required=True)
+    extract.add_argument("--workers", type=int, default=1)
+    extract.add_argument("--actor", required=True)
+    extract.add_argument("--reason", required=True)
+    for action in ("status", "pause", "resume"):
+        item = batch_actions.add_parser(action)
+        item.add_argument("--batch-id", required=True)
+        if action != "status":
+            item.add_argument("--actor", required=True)
+            item.add_argument("--reason", required=True)
+            item.add_argument("--workers", type=int)
+            item.add_argument("--dry-run", action="store_true", help="Preview state and concurrency without changing retry controls")
+    plan = actions.add_parser(
+        "plan", help="Create idempotent jobs for stored BVIDs, video-part IDs or every stored part")
     plan.add_argument("--archive-root", default=archive_root)
     selection = plan.add_mutually_exclusive_group(required=True)
     selection.add_argument("--part-id", type=int, action="append", help="Exact stored video_part_id; repeat to select more")
     selection.add_argument("--bvid", action="append", help="Stored BVID; repeat to select more videos")
+    selection.add_argument("--all-parts", dest="all_parts", action="store_true",
+                           help="Select every stored non-gone part; plan ASR from registered local audio")
     plan.add_argument("--page-index", type=_nonnegative_page_index, default=None,
                       help="Stored zero-based index (0 is P1), applied to each --bvid")
     plan.add_argument("--asr-policy", choices=[item.value for item in AsrPolicy], default="all")
@@ -39,6 +64,10 @@ def add_workflow_parser(subparsers: argparse._SubParsersAction, *, archive_root:
     plan.add_argument("--aligner-revision", default=None)
     plan.add_argument("--model-dtype", choices=("bfloat16", "float16"), default=None)
     plan.add_argument("--aligner-dtype", choices=("bfloat16", "float16"), default=None)
+    plan.add_argument("--alignment-decoder", choices=("default", "processor", "monotone-max-score", "monotone-max-score/v1"), default=None,
+                      help="Freeze an explicit timestamp decoder; existing profiles stay unchanged")
+    plan.add_argument("--coverage-policy", choices=("full-span", "quiet-edges"), default=None,
+                      help="Opt in to measured nearly-silent edge evidence; this is not speech VAD")
     plan.add_argument("--device", default=None)
     plan.add_argument("--language", default=None)
     plan.add_argument("--chunk-seconds", type=float, default=None)
@@ -126,7 +155,7 @@ def add_workflow_parser(subparsers: argparse._SubParsersAction, *, archive_root:
     worker_selection.add_argument("--kind", choices=[kind.value for kind in PROCESSING_KINDS], action="append",
                                   help="Claim only this job kind; repeat to select more")
     worker_selection.add_argument("--role", choices=tuple(WORKER_ROLES),
-                                  help="Select the fixed ASR/acquisition/editorial/CPU handler set")
+                                  help="Select the fixed ASR/editorial/CPU handler set")
     run.add_argument("--drain-file", default=None, help="Stop claiming when this file exists")
     run.add_argument("--drain-timeout", type=float, default=60,
                      help="Grace period after drain (default: 60s); repeated signal interrupts the current task")
@@ -138,7 +167,7 @@ def add_workflow_parser(subparsers: argparse._SubParsersAction, *, archive_root:
                      help="Conservative reservation budget for the prepared next chunk")
     run.add_argument("--runtime-bindings", default=None,
                      help="Verified checkpoint relocation file; frozen profiles remain unchanged")
-    run.add_argument("--storage-target", action="append", help="Restore retained inputs from TARGET_ID=DIRECTORY before claim")
+    run.add_argument("--storage-target", action="append", help="Restore retained inputs before claim from TARGET_ID=DIRECTORY or TARGET_ID=S3_BINDING_JSON")
     run.add_argument("--warmup-audio", default=None,
                      help="Explicit absolute sentinel audio; decode and align before claiming GPU work")
     run.add_argument("--warmup-timeout", type=float, default=300,
@@ -164,7 +193,7 @@ def add_workflow_parser(subparsers: argparse._SubParsersAction, *, archive_root:
     supervise.add_argument("--asr-prefetch", action="store_true")
     supervise.add_argument("--asr-prefetch-bytes", type=int, default=64 * 1024 * 1024)
     supervise.add_argument("--runtime-bindings", default=None)
-    supervise.add_argument("--storage-target", action="append")
+    supervise.add_argument("--storage-target", action="append", help="Pass TARGET_ID=DIRECTORY or TARGET_ID=S3_BINDING_JSON to each worker")
     supervise.add_argument("--warmup-audio", default=None)
     supervise.add_argument("--warmup-timeout", type=float, default=300)
     supervise.add_argument("--cache-root", default=None)
@@ -353,6 +382,7 @@ def _execute_workflow(args: argparse.Namespace) -> int:
         artifact_roots = roots_for(args.archive_root, flag_value=args.artifact_root,
                                    require_writable=args.workflow_action == "run")
     readonly = args.workflow_action in {"status", "explain", "asr-evidence", "asr-quality", "asr-performance"} or (
+        args.workflow_action == "batch" and (args.batch_action == "status" or getattr(args, "dry_run", False))) or (
         args.workflow_action in {"repair-dependencies", "recover-editorial"} and not args.apply) or (
         args.workflow_action in {"publish", "retry"} and args.dry_run)
     mode = ArchiveAccessMode.READ if readonly else ArchiveAccessMode.WRITE
@@ -424,6 +454,21 @@ def _execute_workflow(args: argparse.Namespace) -> int:
             report = repair_asr(repository, job_id=args.job_id, transcript_id=args.transcript_id,
                                 profile=profile, reason=args.reason)
             print(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False))
+            return 0
+        if args.workflow_action == "batch":
+            from bili_asr.storage.workflow_batches import BatchRepository
+            batches = BatchRepository(connection)
+            if args.batch_action == "create":
+                report = batches.create(args.job_id, desired_workers=args.workers, actor=args.actor, reason=args.reason)
+            elif args.batch_action == "extract":
+                report = batches.extract(args.batch_id, args.job_id, desired_workers=args.workers,
+                                         actor=args.actor, reason=args.reason)
+            elif args.batch_action == "status":
+                report = batches.status(args.batch_id)
+            else:
+                report = batches.set_state(args.batch_id, paused=args.batch_action == "pause",
+                    actor=args.actor, reason=args.reason, desired_workers=args.workers, dry_run=args.dry_run)
+            print(json.dumps(report, ensure_ascii=False, sort_keys=True))
             return 0
         if args.workflow_action == "recover-editorial":
             from bili_asr.services.editorial_chain_recovery import recover_editorial_chain
@@ -537,6 +582,7 @@ def _execute_workflow(args: argparse.Namespace) -> int:
                              "inference_hard_cap_seconds", "inference_no_progress_seconds",
                              "hotword", "offline", "model_id", "tokens_per_second",
                              "min_new_tokens", "second_pass_cache", "model_dtype", "aligner_dtype",
+                             "alignment_decoder", "coverage_policy",
                              "asr_batch_size", "aligner_batch_size", "batch_max_audio_seconds",
                              "batch_max_input_bytes", "batch_max_tokens", "asr_attention", "aligner_attention",
                              "asr_cache_implementation", "asr_compile", "aligner_compile", "compile_max_buckets",
@@ -549,6 +595,7 @@ def _execute_workflow(args: argparse.Namespace) -> int:
                 values["model_revision"] = values["model_revision"] or ""
                 profile = AsrProfile(profile_key=args.profile_key, **values)
                 planned = application.plan(part_ids=args.part_id, bvids=args.bvid, page_index=args.page_index,
+                    all_parts=args.all_parts,
                     policy=policy, profile=profile,
                     editorial_config=editorial_config)
                 profile_id, plan, selection = planned.profile_id, planned.jobs, planned.selection

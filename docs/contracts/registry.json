@@ -2,6 +2,45 @@
   "format_version": 1,
   "contracts": [
     {
+      "identity": "workflow-batches/v1",
+      "owner": "workflow",
+      "authority": [
+        "src/bili_asr/storage/workflow_batches.py",
+        "src/bili_asr/storage/schema-workflow-batches.sql"
+      ],
+      "consumers": [
+        "storage.workflow",
+        "storage.snapshots",
+        "cli.workflow"
+      ],
+      "capabilities": [
+        "extension",
+        "snapshot",
+        "claim-filter"
+      ],
+      "dependencies": [],
+      "schema": null
+    },
+    {
+      "identity": "publication-packages/v1",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/storage/publication_packages.py",
+        "src/bili_asr/storage/schema-publication-packages.sql"
+      ],
+      "consumers": [
+        "publication",
+        "publication_export",
+        "storage.snapshots"
+      ],
+      "capabilities": [
+        "extension",
+        "snapshot"
+      ],
+      "dependencies": [],
+      "schema": null
+    },
+    {
       "identity": "archive-task-state-backup/v2",
       "owner": "archive",
       "authority": [
@@ -176,25 +215,6 @@
       "schema": "archive-reference-backup-v2.schema.json"
     },
     {
-      "identity": "metadata-supervision/v1",
-      "owner": "sources",
-      "authority": [
-        "src/bili_asr/services/metadata_supervision.py"
-      ],
-      "consumers": [
-        "cli.meta",
-        "operator-tools"
-      ],
-      "capabilities": [
-        "validate",
-        "read",
-        "write",
-        "retry-decision"
-      ],
-      "dependencies": [],
-      "schema": null
-    },
-    {
       "identity": "metadata-acceptance/v1",
       "owner": "sources",
       "authority": [
@@ -203,9 +223,7 @@
         "src/bili_asr/storage/metadata_acceptance.py"
       ],
       "consumers": [
-        "sources.bilibili_api_gateway",
-        "services.metadata_ingest",
-        "services.metadata_refresh",
+        "cli.local_input",
         "storage.metadata",
         "storage.snapshots",
         "provenance-reader"
@@ -232,7 +250,7 @@
       "consumers": [
         "storage.source_observations",
         "storage.snapshots",
-        "cli.source"
+        "cli.local_input"
       ],
       "capabilities": [
         "extension",
@@ -251,7 +269,7 @@
       ],
       "consumers": [
         "storage.source_observations",
-        "cli.source"
+        "cli.local_input"
       ],
       "capabilities": [
         "read",
@@ -271,7 +289,7 @@
       ],
       "consumers": [
         "storage.source_observations",
-        "cli.source"
+        "cli.local_input"
       ],
       "capabilities": [
         "read",
@@ -497,6 +515,49 @@
       ],
       "dependencies": [],
       "schema": null
+    },
+    {
+      "identity": "artifact-storage-v2",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/storage/schema-artifact-storage.sql",
+        "src/bili_asr/storage/schema-artifact-storage-v2-upgrade.sql"
+      ],
+      "consumers": [
+        "storage.artifact_catalog",
+        "storage.artifact_s3_upgrade",
+        "storage.snapshots"
+      ],
+      "capabilities": [
+        "extension",
+        "snapshot",
+        "explicit-maintenance-upgrade"
+      ],
+      "dependencies": [
+        "artifact-storage-v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "s3-compatible/v1",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/s3_storage.py"
+      ],
+      "consumers": [
+        "cli.remote_storage",
+        "services.remote_artifacts",
+        "services.reference_backup"
+      ],
+      "capabilities": [
+        "read",
+        "write",
+        "validate"
+      ],
+      "dependencies": [
+        "artifact-storage-v2"
+      ],
+      "schema": "s3-compatible-v1.schema.json"
     },
     {
       "identity": "artifact-inventory-v1",

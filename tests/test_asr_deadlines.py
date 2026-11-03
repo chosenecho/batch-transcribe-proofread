@@ -26,7 +26,7 @@ def database(tmp_path):
 def test_existing_v2_bytes_and_digest_are_unchanged_and_scaled_extension_is_frozen(database):
     profile = AsrProfile("baseline", "offline", device="cpu")
     legacy = asdict(profile)
-    for name in (*DEADLINE_DEFAULTS, "profile_key", "model_dtype", "aligner_dtype",
+    for name in (*DEADLINE_DEFAULTS, "profile_key", "model_dtype", "aligner_dtype", "alignment_decoder", "coverage_policy",
                  "asr_batch_size", "aligner_batch_size", "batch_max_audio_seconds", "batch_max_input_bytes",
                  "batch_max_tokens", "asr_attention", "aligner_attention", "asr_cache_implementation",
                  "asr_compile", "aligner_compile", "compile_max_buckets", "compile_max_input_tokens", "compile_max_output_tokens"):

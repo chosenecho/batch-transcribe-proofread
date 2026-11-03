@@ -80,7 +80,8 @@ def _register_local(catalog: ArtifactCatalog, roots: ArtifactRoots, object_id: s
 
 
 def restore_artifact(roots: ArtifactRoots, object_id: str, *, target_id: str,
-                     target_root: Path, storage_key: str, _online: bool = False) -> dict:
+                     target_root: Path, storage_key: str, _online: bool = False,
+                     _remote_instance: str | None = None) -> dict:
     """Verify one packaged member and install it under the selected write base.
 
     Archive maintenance excludes supported production writers. Large reads run
@@ -111,7 +112,7 @@ def restore_artifact(roots: ArtifactRoots, object_id: str, *, target_id: str,
                 "target_id": target_id, "storage_key": storage_key}
         plan_hash = hashlib.sha256(json.dumps(plan, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
         with connection:
-            catalog.register_target(target_id, kind="directory")
+            catalog.register_target(target_id, kind="s3" if _remote_instance else "directory", instance_id=_remote_instance)
             catalog.begin_transfer(operation_id, kind="restore", plan_sha256=plan_hash, target_id=target_id)
             catalog.record_transfer_item(operation_id, object_id, state="planned")
             catalog.set_transfer_state(operation_id, "copying")

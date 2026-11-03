@@ -135,25 +135,8 @@ CREATE TABLE IF NOT EXISTS publication_events (
     changed_at INTEGER NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS publication_packages (
-    release_id TEXT PRIMARY KEY REFERENCES publication_releases(release_id) ON DELETE RESTRICT,
-    relative_path TEXT NOT NULL UNIQUE,
-    package_sha256 TEXT NOT NULL CHECK (
-        length(package_sha256) = 64 AND package_sha256 NOT GLOB '*[^0-9a-f]*'
-    )
-);
-
 CREATE INDEX IF NOT EXISTS idx_publication_events_part
     ON publication_events(video_part_id, event_id);
-
-CREATE TRIGGER IF NOT EXISTS immutable_publication_packages_update
-BEFORE UPDATE ON publication_packages BEGIN
-    SELECT RAISE(ABORT, 'publication packages are immutable');
-END;
-CREATE TRIGGER IF NOT EXISTS immutable_publication_packages_delete
-BEFORE DELETE ON publication_packages BEGIN
-    SELECT RAISE(ABORT, 'publication packages are immutable');
-END;
 
 CREATE TRIGGER IF NOT EXISTS immutable_publication_editions_update
 BEFORE UPDATE ON publication_editions BEGIN

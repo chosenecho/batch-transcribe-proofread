@@ -18,13 +18,34 @@ from bili_asr.remote_storage import (
 from bili_asr.storage_targets import unique_json_object
 
 
+def read_remote_binding(path):
+    from bili_asr.artifact_inventory import require_regular_file
+    if require_regular_file(path).st_size > 16384:
+        raise RemoteStorageError("binding_too_large")
+    document = json.loads(path.read_bytes(), object_pairs_hook=unique_json_object)
+    if isinstance(document, dict) and document.get("backend") == "s3-compatible/v1":
+        from bili_asr.s3_storage import read_s3_binding
+        return read_s3_binding(path)
+    return read_ssh_binding(path)
+
+
+def remote_backend(binding):
+    from bili_asr.s3_storage import S3Backend, S3Binding
+    return S3Backend(binding) if isinstance(binding, S3Binding) else SSHDirectoryBackend(binding)
+
+
 def add_remote_parsers(subparsers: argparse._SubParsersAction, *, archive_root: str):
-    remote = subparsers.add_parser("remote", help="Explicit SSH directory package copy and restoration")
+    remote = subparsers.add_parser("remote", help="Explicit SSH/S3 package copy and verified restoration")
     actions = remote.add_subparsers(dest="remote_action", required=True)
-    for name in ("prepare", "probe", "push", "restore"):
+    upgrade = actions.add_parser("upgrade-catalog", help="Explicit catalog v2 migration with a retained DB backup")
+    upgrade.set_defaults(database_policy=None)
+    upgrade.add_argument("--archive-root", default=archive_root)
+    upgrade.add_argument("--artifact-root")
+    upgrade.add_argument("--backup", required=True, help="New SQLite backup file outside archive/artifact roots")
+    for name in ("prepare", "probe", "push", "restore", "abort-upload"):
         action = actions.add_parser(name)
         action.set_defaults(database_policy=None)
-        action.add_argument("--binding", required=True, help="SSH binding JSON; secrets are environment references")
+        action.add_argument("--binding", required=True, help="SSH/S3 binding JSON; secrets are environment references")
         action.add_argument("--archive-root", default=archive_root)
         action.add_argument("--artifact-root")
         if name == "push":
@@ -33,6 +54,8 @@ def add_remote_parsers(subparsers: argparse._SubParsersAction, *, archive_root: 
             action.add_argument("--object-id", required=True)
             action.add_argument("--storage-key", required=True)
             action.add_argument("--scratch-root")
+        if name == "abort-upload":
+            action.add_argument("--transfer-id", required=True)
     reference = subparsers.add_parser("reference", help="Non-self-contained state backups with explicit dependencies")
     actions = reference.add_subparsers(dest="reference_action", required=True)
     for name in ("save", "inspect", "check", "plan", "restore"):
@@ -58,12 +81,21 @@ def add_remote_parsers(subparsers: argparse._SubParsersAction, *, archive_root: 
 
 def _cmd_remote(args):
     try:
-        binding = read_ssh_binding(Path(args.binding))
-        with SSHDirectoryBackend(binding) as backend:
+        if args.remote_action == "upgrade-catalog":
+            from bili_asr.storage.artifact_s3_upgrade import upgrade_catalog_s3
+            roots = roots_for(args.archive_root, flag_value=args.artifact_root, require_writable=False)
+            print(json.dumps(upgrade_catalog_s3(roots, Path(args.backup)), sort_keys=True))
+            return 0
+        binding = read_remote_binding(Path(args.binding))
+        with remote_backend(binding) as backend:
             if args.remote_action == "prepare":
                 report = backend.prepare()
             elif args.remote_action == "probe":
                 report = backend.probe()
+            elif args.remote_action == "abort-upload":
+                from bili_asr.services.remote_artifacts import abort_remote_upload
+                roots = roots_for(args.archive_root, flag_value=args.artifact_root, require_writable=False)
+                report = abort_remote_upload(roots, backend, args.transfer_id)
             else:
                 from bili_asr.services.remote_artifacts import (
                     push_remote_package,
@@ -104,7 +136,7 @@ def _cmd_reference(args):
                 holds = json.loads(path.read_bytes(), object_pairs_hook=unique_json_object)
             instances = {}
             for path in args.remote_binding or ():
-                binding = read_ssh_binding(Path(path))
+                binding = read_remote_binding(Path(path))
                 if binding.target_id in instances or binding.instance_id is None:
                     raise ValueError("remote target needs one explicit instance binding")
                 instances[binding.target_id] = binding.instance_id
@@ -118,11 +150,11 @@ def _cmd_reference(args):
                 backends = {}
                 if online:
                     for path in args.remote_binding or ():
-                        binding = read_ssh_binding(Path(path))
+                        binding = read_remote_binding(Path(path))
                         if binding.target_id in backends:
                             raise ValueError("duplicate remote target binding")
                         try:
-                            backends[binding.target_id] = stack.enter_context(SSHDirectoryBackend(binding))
+                            backends[binding.target_id] = stack.enter_context(remote_backend(binding))
                         except RemoteStorageError as error:
                             backends[binding.target_id] = UnavailableBackend(binding, error)
                 report = check_reference_backup(Path(args.file), online=online, remote_backends=backends,

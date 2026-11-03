@@ -20,10 +20,17 @@ DEADLINE_DEFAULTS = {
     "inference_startup_seconds": 300.0, "inference_hard_cap_seconds": 14400.0,
     "inference_no_progress_seconds": 600.0,
 }
+OUTPUT_DEFAULTS = {"alignment_decoder": "default", "coverage_policy": "full-span"}
 
 def encode_profile(values: dict[str, Any]) -> str:
     values = dict(values)
     values.pop("profile_key", None)
+    output = {name: values.pop(name) for name in OUTPUT_DEFAULTS}
+    if output == {"alignment_decoder": "monotone-max-score/v1", "coverage_policy": "full-span"}:
+        # Preserve profiles already frozen by the earlier deployed release.
+        values["alignment_decoding"] = {"schema_version": 1, "algorithm": output["alignment_decoder"]}
+    elif output != OUTPUT_DEFAULTS and output != {"alignment_decoder": "processor", "coverage_policy": "full-span"}:
+        values["output_policy"] = {"schema_version": 1, **output}
     deadline = {name: values.pop(name) for name in DEADLINE_DEFAULTS}
     for name in deadline:
         if name != "inference_timeout_policy":
@@ -58,6 +65,24 @@ def decode_profile(config_json: str) -> dict[str, Any]:
     values: dict[str, Any] = json.loads(config_json)
     if values.pop("schema_version") != 2:
         raise ValueError("unsupported ASR profile schema")
+    output = values.pop("output_policy", None)
+    decoder = values.pop("alignment_decoding", None)
+    if set(values) & set(OUTPUT_DEFAULTS):
+        raise ValueError("alignment decoder and ASR output fields require the versioned extension")
+    if decoder is not None:
+        if (output is not None or not isinstance(decoder, dict)
+                or set(decoder) != {"schema_version", "algorithm"}
+                or type(decoder["schema_version"]) is not int or decoder["schema_version"] != 1
+                or decoder["algorithm"] != "monotone-max-score/v1"):
+            raise ValueError("unsupported alignment decoding schema")
+    values.update(OUTPUT_DEFAULTS)
+    if decoder is not None:
+        values["alignment_decoder"] = decoder["algorithm"]
+    if output is not None:
+        if (not isinstance(output, dict) or set(output) != set(OUTPUT_DEFAULTS) | {"schema_version"}
+                or type(output["schema_version"]) is not int or output["schema_version"] != 1):
+            raise ValueError("unsupported ASR output policy schema")
+        values.update({name: output[name] for name in OUTPUT_DEFAULTS})
     deadline = values.pop("deadline", None)
     if set(values) & set(DEADLINE_DEFAULTS):
         raise ValueError("ASR deadline fields require the versioned extension")

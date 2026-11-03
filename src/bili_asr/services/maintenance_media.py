@@ -111,6 +111,8 @@ class ReferenceCapture:
         if target_id in self.remote_backends:
             from bili_asr.services.remote_artifacts import fetch_remote_package
             backend = self.remote_backends[target_id]
+            if getattr(backend, "target_kind", None) == "s3":
+                raise ValueError("S3 requires the reference-backup format; maintenance-media v1 is directory/SSH only")
             binding = backend.binding
             if (binding.target_id != target_id or not isinstance(binding.instance_id, str)
                     or re.fullmatch("[0-9a-f]{32}", binding.instance_id) is None):

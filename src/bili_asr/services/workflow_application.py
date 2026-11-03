@@ -34,9 +34,9 @@ class WorkflowApplication:
 
     def plan(self, *, part_ids: Iterable[int] | None, bvids: Iterable[str] | None,
              page_index: int | None, policy: AsrPolicy, profile: AsrProfile,
-             editorial_config: Mapping[str, Any] | None) -> PlannedWorkflow:
+             editorial_config: Mapping[str, Any] | None, all_parts: bool = False) -> PlannedWorkflow:
         selection = resolve_workflow_selection(self.session.connection, part_ids=part_ids,
-                                               bvids=bvids, page_index=page_index)
+                                               bvids=bvids, page_index=page_index, all_parts=all_parts)
         for part_id in selection.part_ids:
             if self.session.connection.execute(
                 "SELECT 1 FROM part_audio_objects WHERE video_part_id=?", (part_id,)

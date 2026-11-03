@@ -96,6 +96,15 @@ def _dependency(catalog, key, identity):
     return {"path": key, "object_id": identity, "size": obj["byte_size"], "replicas": replicas}
 
 
+def _catalog_remote_instances(connection, targets):
+    from bili_asr.storage.extension_contracts import artifact_catalog_version
+    if artifact_catalog_version(connection) != 2:
+        return {}
+    return {target_id: instance_id for target_id, instance_id in connection.execute(
+        "SELECT i.target_id,i.instance_id FROM artifact_remote_instances i JOIN artifact_targets t USING(target_id) WHERE t.kind='s3'")
+        if target_id in targets}
+
+
 def _consumers(connection, dependencies):
     result = {}
     for dep in dependencies:
@@ -166,6 +175,11 @@ def save_reference_backup(roots: ArtifactRoots, output: Path, *, holds: dict | N
                     elif key not in artifacts:
                         raise ReferenceBackupError(f"required bytes have no embedded file or retained replica: {key}")
                 consumers = _consumers(connection, dependencies)
+                used_targets = {replica["target_id"] for dep in dependencies for replica in dep["replicas"]}
+                for target_id, instance_id in _catalog_remote_instances(connection, used_targets).items():
+                    if instances.get(target_id, instance_id) != instance_id:
+                        raise ReferenceBackupError("S3 binding differs from retained catalog instance")
+                    instances[target_id] = instance_id
             used_targets = {replica["target_id"] for dep in dependencies for replica in dep["replicas"]}
             if not set(instances) <= used_targets:
                 raise ReferenceBackupError("instance binding names a target outside the dependency manifest")
@@ -306,6 +320,10 @@ def _validate_into(path, stage, *, extract_artifacts=False):
             available[key] = dep["object_id"]
         if manifest["affected_jobs"] != _consumers(connection, dependencies):
             raise ReferenceBackupError("affected tasks differ from retained database")
+        used_targets = {replica["target_id"] for dep in dependencies for replica in dep["replicas"]}
+        if any(manifest["target_instances"].get(target_id) != instance_id
+               for target_id, instance_id in _catalog_remote_instances(connection, used_targets).items()):
+            raise ReferenceBackupError("reference manifest differs from retained S3 target instance")
     check_artifact_collisions(list(seen))
     targets = {replica["target_id"] for dep in dependencies for replica in dep["replicas"]}
     if not set(manifest["target_instances"]) <= targets:

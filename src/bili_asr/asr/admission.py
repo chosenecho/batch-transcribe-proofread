@@ -11,6 +11,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from bili_asr.storage.models import MAX_TIMELINE_MS
+from .edge_coverage import diagnostic_edge_coverage
 
 POLICY_VERSION = "asr-admission/v1"
 TIMESTAMP_TOLERANCE_MS = 50
@@ -59,8 +60,6 @@ def assess_output(segments: Sequence[Mapping[str, Any]], *, duration_ms: int | N
                 coverage_valid = True
                 decoded_ms = round(decoded * 1000)
                 coverage_short = short
-                if short:
-                    issue("asr_coverage_short")
     bound = decoded_ms if decoded_ms is not None else duration_ms
     if type(bound) is not int or bound <= 0:
         bound = None
@@ -109,6 +108,15 @@ def assess_output(segments: Sequence[Mapping[str, Any]], *, duration_ms: int | N
         measured_span = min(max(ends) - min(starts), float(coverage["decoded_s"]))
         if abs(measured_span - float(coverage["produced_s"])) > TIMESTAMP_TOLERANCE_MS / 1000:
             issue("asr_coverage_inconsistent")
+    edge_coverage = None
+    if coverage_short:
+        if coverage_valid and starts and representable:
+            edge_coverage = diagnostic_edge_coverage(diagnostics, segments,
+                decoded_s=float(coverage["decoded_s"]), minimum=float(coverage["coverage_min"]))
+        if edge_coverage is None or edge_coverage["coverage_short"]:
+            issue("asr_coverage_short")
+        else:
+            coverage_short = False
     review_required = False
     if isinstance(diagnostics, Mapping):
         quality = diagnostics.get("quality")
@@ -129,7 +137,7 @@ def assess_output(segments: Sequence[Mapping[str, Any]], *, duration_ms: int | N
     hard = set(counts) - {"asr_coverage_short", "asr_diagnostics_review_required"}
     status = ("unusable" if hard else "needs-review" if coverage_short or review_required
               else "unknown" if bound is None or not coverage_valid else "usable")
-    return {"policy_version": POLICY_VERSION, "status": status,
+    result = {"policy_version": POLICY_VERSION, "status": status,
             "inference_completed": True, "confirmed_silence": None,
             "representable": representable, "segment_count": len(segments),
             "timeline": "invalid" if any(code.startswith("asr_timestamp_") for code in counts) else "valid",
@@ -138,6 +146,11 @@ def assess_output(segments: Sequence[Mapping[str, Any]], *, duration_ms: int | N
             "duration_ms": bound, "timestamp_tolerance_ms": TIMESTAMP_TOLERANCE_MS,
             "issues": issues, "issue_counts": counts,
             "issues_truncated": sum(counts.values()) > len(issues)}
+    if edge_coverage is not None:
+        result["coverage_basis"] = "quiet-edges/v1"
+        result["full_span_coverage_short"] = bool(coverage["coverage_short"])
+        result["edge_coverage"] = edge_coverage
+    return result
 
 
 def evidence_value(value: Any) -> Any:

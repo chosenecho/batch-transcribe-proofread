@@ -10,6 +10,37 @@ import subprocess
 import sys
 
 CASES = (
+    'test_alignment_separators',
+    'test_asr_output_policy',
+    'test_asr_batching',
+    'test_asr_quality_foundation',
+    'test_audio_input_boundary_cleanup',
+    'test_file_generation_watch',
+    'test_bailian_cli',
+    'test_bailian_http',
+    'test_bailian_transcription',
+    'test_delivery',
+    'test_portable_bundle',
+    'test_production',
+    'test_publication_package_extension',
+    'test_s3_storage',
+    'test_storage_report',
+    'test_workflow_batches',
+    'test_extension_contract_edges',
+    'test_evidence_storage_audit',
+    'test_evidence_cold_pilot',
+    'test_object_storage_estimate',
+    'test_replay_deployment_verifier',
+    'test_sync_boundary',
+    'test_workflow_selection',
+    'test_snapshot_e2e',
+    'test_snapshot_differential_check',
+    'test_contract_registry',
+    'test_universal_archive',
+    'test_publication',
+    'test_publication_cli',
+    'test_publication_review_export',
+
     "test_local_processing", "test_batch_proofread", "test_ai_editorial",
     "test_alignment_unresolved", "test_constrained_alignment", "test_asr_admission",
     "test_asr_audio_mixing", "test_asr_backend", "test_asr_checkpoint_diagnostics",
@@ -35,7 +66,7 @@ def main() -> int:
         raise SystemExit(f"acceptance suite is incomplete: {missing}")
     # These exact inherited failures were reproduced in the original checkout.
     # Keep them in the full suite, with the evidence and scope in extraction.md.
-    inherited = ["tests/test_editorial_replay_index.py::test_upgrade_target_indexes_survive_full_snapshot_check_and_restore"]
+    inherited = []
     if os.name == "nt":
         inherited.append("tests/test_editorial_replay_index.py::test_old_library_uses_scoped_bounded_reads_without_a_global_json_scan")
     deselected = [f"--deselect={item}" for item in inherited]

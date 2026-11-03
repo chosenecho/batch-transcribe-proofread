@@ -10,6 +10,7 @@ from typing import Any
 from .alignment import _clean_text
 from .constants import SAMPLE_RATE, _MEL_FRAMES_PER_SECOND
 from .diagnostics import generation_evidence
+from .constrained_alignment import decode_alignment
 from .preparation import estimate_preparation, prepared_input_bytes
 
 
@@ -111,9 +112,10 @@ class BatchExecutor:
                     items = []
                     for index in indices:
                         audio = np.asarray(chunks[index][0], dtype=np.float32)
+                        duration = len(audio) / SAMPLE_RATE
                         if len(audio) < self.minimum:
                             audio = np.pad(audio, (0, self.minimum - len(audio)))
-                        items.append({"chunk_index": index, "audio": audio})
+                        items.append({"chunk_index": index, "audio": audio, "duration_s": duration})
                     if len(items) == 1 and width > 1 and not self._window_admitted(indices, chunks):
                         self._fallback("single_chunk_exceeds_batch_reservation")
                 for offset in range(0, len(items), self.config.asr_batch_size):
@@ -221,7 +223,13 @@ class BatchExecutor:
         from .progress import _progress
         for item in items:
             self.runner._trace_chunk_index = item["chunk_index"]
-            item["raw_units"] = self.runner._align_chunk(self.models, item["audio"], item["text"], item["language"])
+            self.runner._last_alignment_decode = None
+            self.runner._alignment_duration_s = item["duration_s"]
+            try:
+                item["raw_units"] = self.runner._align_chunk(self.models, item["audio"], item["text"], item["language"])
+            finally:
+                self.runner._alignment_duration_s = None
+            item["alignment_decode"] = self.runner._last_alignment_decode
             _progress("aligned")
 
     def _align(self, items: list[dict]) -> None:
@@ -256,9 +264,10 @@ class BatchExecutor:
                 logits = self.runner.backend.align(self.models.aligner, inputs)
             self._trace("batch_align_forward", forward_clock, items)
             decoded_clock = time.perf_counter()
-            units = self.models.aligner_processor.decode_forced_alignment(logits=logits,
+            units, decoding = decode_alignment(self.models.aligner_processor, logits=logits,
                 input_ids=inputs["input_ids"], word_lists=word_lists,
-                timestamp_token_id=self.models.aligner.config.timestamp_token_id)
+                timestamp_token_id=self.models.aligner.config.timestamp_token_id,
+                durations=[item["duration_s"] for item in items], policy=self.config.alignment_decoder)
             self._trace("batch_align_postprocess", decoded_clock, items)
             if len(units) != len(items):
                 raise ValueError("alignment backend batch result count mismatch")
@@ -266,8 +275,8 @@ class BatchExecutor:
             self.batch_index += 1
             self.evidence["batches"].append({"batch_index": batch_id, "stage": "align",
                                            "chunk_indices": [item["chunk_index"] for item in items]})
-            for item, value in zip(items, units, strict=True):
-                item.update(raw_units=list(value), align_batch_index=batch_id)
+            for item, value, decode in zip(items, units, decoding, strict=True):
+                item.update(raw_units=list(value), align_batch_index=batch_id, alignment_decode=decode)
             _progress("aligned")
         finally:
             self.timings["align"] += time.perf_counter() - started

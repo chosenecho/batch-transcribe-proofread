@@ -8,6 +8,7 @@ import pytest
 
 from bili_asr import cli
 from bili_asr.storage import open_database
+from bili_asr.storage.workflow_outputs import record_audio
 from bili_asr.storage.workflow_selection import resolve_workflow_selection
 
 
@@ -30,6 +31,10 @@ def _seed(connection) -> None:
              (8, "BVa", 2, 4, "gone"),
              (11, "BVgone", 0, 5, "gone")],
         )
+        for part_id in (4, 7, 9):
+            record_audio(connection, part_id=part_id, sha256="a" * 64,
+                byte_size=10, media_format="wav", duration_ms=1000,
+                storage_key="audio/offline-fixture.wav", target_id="local")
 
 
 @pytest.fixture
@@ -62,6 +67,36 @@ def test_exact_ids_are_deduplicated_and_sorted_by_stored_identity(connection):
     assert resolve_workflow_selection(connection, part_ids=[9, 4, 7, 9]).part_ids == (7, 4, 9)
 
 
+def test_all_parts_selects_every_stored_active_part_with_explicit_exclusions(connection):
+    changes = connection.total_changes
+    selection = resolve_workflow_selection(connection, all_parts=True)
+    assert selection.part_ids == (7, 4, 9)
+    assert [target.work_id for target in selection.targets] == ["BVa:p0", "BVa:p1", "BVb:p0"]
+    assert [target.work_id for target in selection.excluded_gone] == ["BVa:p2", "BVgone:p0"]
+    assert connection.total_changes == changes
+    assert not connection.in_transaction
+
+
+def test_all_parts_on_an_archive_without_parts_has_an_explicit_diagnostic(tmp_path):
+    empty = open_database(tmp_path / "empty")
+    try:
+        with pytest.raises(ValueError) as exc:
+            resolve_workflow_selection(empty, all_parts=True)
+        assert "no stored video parts" in str(exc.value)
+        assert "input import" in str(exc.value)
+    finally:
+        empty.close()
+
+
+def test_all_parts_refuses_gone_only_and_nonboolean_selector(connection):
+    with connection:
+        connection.execute("UPDATE video_parts SET processing_status='gone'")
+    with pytest.raises(ValueError, match="all stored video parts are gone"):
+        resolve_workflow_selection(connection, all_parts=True)
+    with pytest.raises(ValueError, match="must be a bool"):
+        resolve_workflow_selection(connection, all_parts=1)
+
+
 @pytest.mark.parametrize("kwargs,diagnostic", [
     ({"bvids": ["BVunknown"]}, "unknown BVID=BVunknown"),
     ({"bvids": ["BVempty"]}, "BVID=BVempty has no stored parts"),
@@ -71,11 +106,14 @@ def test_exact_ids_are_deduplicated_and_sorted_by_stored_identity(connection):
     ({"part_ids": [8]}, "video_part_id=8 (BVa:p2) is gone"),
     ({"part_ids": [99]}, "unknown video_part_id=99"),
     ({"part_ids": [4], "page_index": 0}, "--page-index requires --bvid"),
+    ({"all_parts": True, "page_index": 0}, "--page-index requires --bvid"),
     ({"bvids": ["BVa"], "page_index": -1}, "non-negative"),
     ({"bvids": ["BVa"], "part_ids": [4]}, "without mixing"),
+    ({"bvids": ["BVa"], "all_parts": True}, "select exactly one"),
+    ({"part_ids": [4], "all_parts": True}, "select exactly one"),
     ({"bvids": [""]}, "non-empty"),
     ({"part_ids": [0]}, "positive integers"),
-    ({}, "select either"),
+    ({}, "select exactly one"),
 ])
 def test_unresolved_and_invalid_selection_has_explicit_diagnostic(connection, kwargs, diagnostic):
     with pytest.raises(ValueError) as exc:
@@ -124,7 +162,7 @@ def _plan(root, *selection, extra=()):
 def test_cli_summary_includes_resolved_targets_exclusions_and_idempotent_counts(connection, tmp_path, capsys):
     assert _plan(tmp_path, "--bvid", "BVb", "--bvid", "BVa", "--bvid", "BVa") == 0
     first = capsys.readouterr()
-    assert "subtitle=3 audio=3 asr=3" in first.out
+    assert "subtitle=0 audio=0 asr=3" in first.out
     assert "target: bvid=BVa page_index=0 video_part_id=7 work_id=BVa:p0" in first.out
     assert "target: bvid=BVa page_index=1 video_part_id=4 work_id=BVa:p1" in first.out
     assert "excluded gone: bvid=BVa page_index=2 video_part_id=8 work_id=BVa:p2" in first.out
@@ -133,8 +171,23 @@ def test_cli_summary_includes_resolved_targets_exclusions_and_idempotent_counts(
     second = capsys.readouterr()
     assert "subtitle=0 audio=0 asr=0" in second.out
     assert "work_id=BVa:p0" in second.out and "work_id=BVb:p0" in second.out
-    assert connection.execute("SELECT COUNT(*) FROM workflow_jobs").fetchone()[0] == 9
+    assert connection.execute("SELECT COUNT(*) FROM workflow_jobs").fetchone()[0] == 3
     assert connection.execute("SELECT COUNT(*) FROM workflow_asr_profiles").fetchone()[0] == 1
+
+
+def test_cli_all_parts_queues_only_asr_for_registered_local_audio(connection, tmp_path, capsys):
+    assert _plan(tmp_path, "--all-parts") == 0
+    result = capsys.readouterr()
+    assert "subtitle=0 audio=0 asr=3" in result.out
+    assert "target: bvid=BVa page_index=0 video_part_id=7 work_id=BVa:p0" in result.out
+    assert "excluded gone: bvid=BVa page_index=2 video_part_id=8 work_id=BVa:p2" in result.out
+    assert "excluded gone: bvid=BVgone page_index=0 video_part_id=11 work_id=BVgone:p0" in result.out
+    assert connection.execute("SELECT COUNT(*) FROM workflow_jobs").fetchone()[0] == 3
+    assert connection.execute("SELECT COUNT(*) FROM workflow_asr_profiles").fetchone()[0] == 1
+    assert _plan(tmp_path, "--all-parts") == 0
+    again = capsys.readouterr()
+    assert "subtitle=0 audio=0 asr=0" in again.out
+    assert connection.execute("SELECT COUNT(*) FROM workflow_jobs").fetchone()[0] == 3
 
 
 @pytest.mark.parametrize("args,diagnostic", [
@@ -142,6 +195,7 @@ def test_cli_summary_includes_resolved_targets_exclusions_and_idempotent_counts(
     (("--bvid", "BVa", "--bvid", "BVb", "--page-index", "1"), "BVb page_index=1"),
     (("--part-id", "7", "--part-id", "99"), "video_part_id=99"),
     (("--part-id", "7", "--page-index", "0"), "requires --bvid"),
+    (("--all-parts", "--page-index", "0"), "requires --bvid"),
     (("--bvid", "BVa", "--proofread", "--context-tokens", "1"), "context window"),
 ])
 def test_cli_selection_and_configuration_failure_does_not_create_profile_or_jobs(connection, tmp_path, capsys, args, diagnostic):
@@ -155,6 +209,8 @@ def test_cli_selection_and_configuration_failure_does_not_create_profile_or_jobs
 
 @pytest.mark.parametrize("args", [
     ("--bvid", "BVa", "--part-id", "7"),
+    ("--bvid", "BVa", "--all-parts"),
+    ("--all-parts", "--part-id", "7"),
     ("--bvid", "BVa", "--page-index", "-1"),
     ("--bvid", "BVa", "--page-index", "not-an-index"),
     ("--bvid", "BVa", "--asr-policy", "below-threshold"),
@@ -213,7 +269,7 @@ def test_bvid_and_part_id_selection_preserve_profile_policy_and_proofread_contra
             assert _plan(root, *selector, extra=extra) == 0
             assert "proofread=1 documents=1" in capsys.readouterr().out
             contract = _scheduled_contract(connection)
-            assert len(contract[0]) == 5
+            assert len(contract[0]) == 3
             asr = next(job for job in contract[0] if job["kind"] == "asr")
             assert asr["policy_key"] == policy
             assert json.loads(asr["payload_json"])["reference_transcript_id"] is None
@@ -221,7 +277,7 @@ def test_bvid_and_part_id_selection_preserve_profile_policy_and_proofread_contra
             assert tuple(profile) == ("selection-profile", "model-v1", "abc", "Chinese")
             assert _plan(root, *selector, extra=extra) == 0
             assert "proofread=0 documents=0" in capsys.readouterr().out
-            assert connection.execute("SELECT COUNT(*) FROM workflow_jobs").fetchone()[0] == 5
+            assert connection.execute("SELECT COUNT(*) FROM workflow_jobs").fetchone()[0] == 3
             results.append(contract)
         finally:
             connection.close()

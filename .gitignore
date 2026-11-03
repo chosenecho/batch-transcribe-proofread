@@ -5,6 +5,7 @@
 /HANDOFF.md
 /pytest-of-*/
 /.archive.archive-maintenance.lock
+/.maintenance-chain-check-*.archive-maintenance.lock
 /verification-results/
 
 # Retired nested checkout residue

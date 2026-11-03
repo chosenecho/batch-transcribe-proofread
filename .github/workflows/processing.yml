@@ -9,7 +9,7 @@ permissions:
 jobs:
   processing:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -17,7 +17,7 @@ jobs:
           python-version: '3.12'
       - uses: astral-sh/setup-uv@v6
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - run: uv sync --locked --extra dev --python 3.12
+      - run: uv sync --locked --extra dev --extra remote --python 3.12
       - run: uv run --no-sync ruff check src scripts tests --select E9,F821,F822,F823
       - run: uv run --no-sync python -m unittest tests.test_upstream_monitor
       - run: uv run --no-sync python scripts/validate_processing.py

@@ -102,15 +102,25 @@ class ArtifactCatalog:
         row = self.connection.execute("SELECT object_id FROM artifact_audio_bindings WHERE audio_id=?", (audio_id,)).fetchone()
         return row[0] if row else None
 
-    def register_target(self, target_id: str, *, kind: str = "directory", created_at: int | None = None) -> str:
+    def register_target(self, target_id: str, *, kind: str = "directory", created_at: int | None = None,
+                        instance_id: str | None = None) -> str:
         _identity(target_id)
-        if kind not in {"local", "directory"}:
+        from bili_asr.storage.extension_contracts import artifact_catalog_version
+        if kind not in {"local", "directory", "s3"} or (kind == "s3" and artifact_catalog_version(self.connection) != 2):
             raise ArtifactCatalogError("unsupported storage target kind")
+        if kind == "s3" and (not isinstance(instance_id, str) or not re.fullmatch("[0-9a-f]{32}", instance_id)):
+            raise ArtifactCatalogError("S3 target requires an explicit instance identity")
         row = self.connection.execute("SELECT kind FROM artifact_targets WHERE target_id=?", (target_id,)).fetchone()
         if row is not None and row[0] != kind:
             raise ArtifactCatalogError("target kind is immutable")
         self.connection.execute("INSERT INTO artifact_targets VALUES (?,?,?) ON CONFLICT(target_id) DO NOTHING",
                                 (target_id, kind, _timestamp(created_at)))
+        if kind == "s3":
+            current = self.connection.execute("SELECT instance_id FROM artifact_remote_instances WHERE target_id=?", (target_id,)).fetchone()
+            if current is not None and current[0] != instance_id:
+                raise ArtifactCatalogError("remote target instance is immutable")
+            self.connection.execute("INSERT INTO artifact_remote_instances VALUES (?,?) ON CONFLICT(target_id) DO NOTHING",
+                                    (target_id, instance_id))
         return target_id
 
     def record_package(self, package_id: str, target_id: str, relative_key: str, *, sha256: str,

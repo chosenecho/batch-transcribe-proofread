@@ -53,24 +53,47 @@ def _ordered(targets: Iterable[WorkflowTarget]) -> tuple[WorkflowTarget, ...]:
                                                    target.page_index, target.video_part_id)))
 
 
+def _all_stored_parts(connection: sqlite3.Connection) -> WorkflowSelection:
+    """Select every stored part, keeping gone rows visible as exclusions."""
+    selected: list[WorkflowTarget] = []
+    excluded: list[WorkflowTarget] = []
+    rows = connection.execute(
+        "SELECT video_part_id, bvid, page_index, processing_status FROM video_parts"
+    ).fetchall()
+    for row in rows:
+        target = _target(row, connection)
+        (excluded if row["processing_status"] == "gone" else selected).append(target)
+    if not selected:
+        if excluded:
+            raise ValueError("all stored video parts are gone; no processable target")
+        raise ValueError("no stored video parts; use input import to register local media first")
+    return WorkflowSelection(_ordered(selected), _ordered(excluded))
+
+
 def resolve_workflow_selection(
     connection: sqlite3.Connection,
     *,
     part_ids: Iterable[int] | None = None,
     bvids: Iterable[str] | None = None,
     page_index: int | None = None,
+    all_parts: bool = False,
 ) -> WorkflowSelection:
     """Resolve exactly one selector form, reporting every unresolved target.
 
     BVID selection without an index excludes parts marked gone, with an
     explicit exclusion list.  Exact part IDs and BVID/index pairs never
     silently exclude gone parts.  A single index applies to every BVID.
+    ``all_parts`` selects every stored part in the archive, excluding the
+    ones marked gone with the same explicit exclusion list. Planning requires
+    registered local audio; selection never starts collection.
     All queries are read-only and chunked below SQLite's older variable limit.
     """
     ids = tuple(dict.fromkeys(part_ids or ()))
     videos = tuple(dict.fromkeys(bvids or ()))
-    if bool(ids) == bool(videos):
-        raise ValueError("select either --part-id or --bvid, without mixing them")
+    if type(all_parts) is not bool:
+        raise ValueError("all_parts must be a bool")
+    if sum((bool(ids), bool(videos), all_parts)) != 1:
+        raise ValueError("select exactly one of --part-id, --bvid or --all-parts, without mixing them")
     if page_index is not None:
         if type(page_index) is not int or page_index < 0:
             raise ValueError("--page-index must be a non-negative stored index (0 is P1)")
@@ -80,6 +103,8 @@ def resolve_workflow_selection(
         raise ValueError("--part-id values must be positive integers")
     if any(not isinstance(bvid, str) or not bvid.strip() for bvid in videos):
         raise ValueError("--bvid values must be non-empty")
+    if all_parts:
+        return _all_stored_parts(connection)
 
     rows: dict[int, sqlite3.Row] = {}
     known_videos: set[str] = set()
@@ -120,16 +145,16 @@ def resolve_workflow_selection(
         for bvid in sorted(videos):
             parts = by_video[bvid]
             if bvid not in known_videos:
-                errors.append(f"unknown BVID={bvid}; run fetch-meta to collect its metadata")
+                errors.append(f"unknown BVID={bvid}; use input import to register its local media")
                 continue
             if not parts:
-                errors.append(f"BVID={bvid} has no stored parts; run fetch-meta to collect its metadata")
+                errors.append(f"BVID={bvid} has no stored parts; use input import to register its local media")
                 continue
             if page_index is not None:
                 parts = [row for row in parts if int(row["page_index"]) == page_index]
                 if not parts:
                     errors.append(f"BVID={bvid} page_index={page_index} has no stored part; "
-                                  "run fetch-meta to refresh its metadata")
+                                  "use input import to register its local media")
                     continue
                 if parts[0]["processing_status"] == "gone":
                     errors.append(f"BVID={bvid} page_index={page_index} is gone")

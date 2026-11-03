@@ -93,6 +93,32 @@ uv run --no-sync batch-transcribe editorial --help
 uv run --no-sync batch-transcribe verify --archive-root archive
 ```
 
+## 本次同步增加的处理能力
+
+2026-11-04 已按固定上游提交 `cd09dd9ba79c7cbe9c818544a8b85051c3dea365` 同步处理部分。来源、适配和验证范围见 [同步记录](docs/upstream-sync-20261104.md)。
+
+- [ASR 输出策略](docs/asr/asr-output-policy.md)：显式的有序分数对齐和近静音首尾覆盖证据，默认策略保持兼容。
+- [全库选择](docs/guides/workflow-selection.md)及[持久批次](docs/operations/workflow-batches.md)：`--all-parts`、成员冻结、暂停、拆分、恢复和领取并发上限。
+- [云端转录](docs/guides/youtube-bailian-transcription.md)：本地文件或已导入的 YouTube 音频，经 DashScope 转录并单独导出，保留失败与续跑证据。
+- `production`：统一配置、新任务规划、worker 启停、诊断和离线备份恢复。
+- `delivery`：按明确的 revision / transcript ID 导出经检查的交付包，在无数据库环境复核。
+- [S3 兼容存储](docs/operations/s3-storage.md)：私有 S3/R2 绑定、分片上传、校验、恢复和引用备份；SQLite 仍保存在本地。
+- [数据库存储报告](docs/operations/database-storage-report.md)、发布包独立扩展、可移植稿件包及文件写入观察修复。
+
+```sh
+# 对导入的全部分段规划转录及校对
+uv run --no-sync batch-transcribe workflow plan --archive-root archive --all-parts --proofread
+
+# 查看统一控制与交付入口
+uv run --no-sync batch-transcribe production --help
+uv run --no-sync batch-transcribe delivery --help
+
+# 需要 S3/SSH 时安装远端存储依赖
+uv sync --locked --extra remote --inexact
+```
+
+批次、发布包和 S3 schema 升级均需显式安装或转换，先保存验证过的备份并停止写入；普通读取不会自动改库。云端转录会调用付费服务，密钥通过进程环境或私有文件提供。GPU 实测、付费 API 和真实云存储验收与离线回归分开记录。
+
 ## 上游更新通知
 
 本仓库监测上游 bilibili-asr-archive 的所有分支，约每 15 分钟检查一次。有新提交头时，在本仓库的“上游提交监测”Issue 中评论并通知接收人；没有变化时保持安静。由于上游是私有仓库，公开提醒不包含分支名、提交消息或代码。配置、手动测试和调度限制见 [上游通知说明](docs/upstream-monitor.md)。

@@ -86,6 +86,8 @@ class AsrProfile:
     compile_max_buckets: int = 2
     compile_max_input_tokens: int = 4096
     compile_max_output_tokens: int = 2048
+    alignment_decoder: str = "default"
+    coverage_policy: str = "full-span"
 
     def asr_config(self) -> ASRConfig:
         """Reconstruct the frozen configuration without consulting the environment."""

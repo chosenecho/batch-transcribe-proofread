@@ -33,6 +33,33 @@ def ensure_local(connection, roots, retained, *, storage_targets):
         from bili_asr.services.artifact_policy import minimum_free_space
         remaining = dict(storage_targets)
         failures = []
+        # A worker may bind an S3 configuration file instead of a directory.
+        # Configuration remains machine-local; only a matching retained target
+        # can be used, under the caller's consumer pin and exact-object fence.
+        for identity, path in list(remaining.items()):
+            if not path.is_file():
+                continue
+            remaining.pop(identity)
+            try:
+                from bili_asr.s3_storage import S3Backend, read_s3_binding
+                from bili_asr.services.remote_artifacts import restore_remote_artifact
+                from bili_asr.storage.artifact_catalog import ArtifactCatalog
+                binding = read_s3_binding(path)
+                if binding.target_id != identity:
+                    raise ValueError("S3 binding target differs from supplied worker target")
+                packages = [replica["package_byte_size"] for replica in ArtifactCatalog(connection).replicas_for_object(retained["object_id"])
+                            if replica["target_id"] == identity and replica["target_kind"] == "s3"
+                            and replica["package_id"] and replica["presence"] not in {"released", "missing"}]
+                if not packages:
+                    raise ValueError("no retained S3 package for this input")
+                with reserve_local_space(connection, roots, retained["byte_size"] + max(packages) + 16 * 1024**2,
+                                         owner="s3-restore:" + retained["object_id"],
+                                         minimum_free_bytes=minimum_free_space(connection)):
+                    with S3Backend(binding) as backend:
+                        restore_remote_artifact(roots, retained["object_id"], retained["storage_key"], backend, _online=True)
+                return verified_local_audio(connection, roots, retained)
+            except (ValueError, OSError) as error:
+                failures.append(identity + ":" + type(error).__name__)
         while remaining:
             packaged = ArtifactAccess(connection, roots, remaining).locate_external(retained["object_id"])
             try:

@@ -188,6 +188,10 @@ def verify_release(connection: sqlite3.Connection, release_id: str,
         check_preserved_body_import(connection, edition_id=edition["edition_id"], artifact_roots=artifact_roots)
     from bili_asr.services.artifact_readers import read_retained_text
     data = read_retained_text(connection, release["relative_path"], release["artifact_sha256"], roots)
+    from bili_asr.storage.publication_packages import package_record
+    package = package_record(connection, release_id)
+    if package is None:
+        return release, edition, data
     package = connection.execute(
         "SELECT relative_path,package_sha256 FROM publication_packages WHERE release_id=?",
         (release_id,),
@@ -259,7 +263,11 @@ def publish_edition(connection: sqlite3.Connection, *, edition_id: str,
                          "template_version": template})
     path = f"publications/part-{edition['video_part_id']}/{release_id}/{template}/publish.md"
     atomic_write_artifact(Path(write_root), path, data)
-    package_path, package_sha256 = _write_publication_package(
+    from bili_asr.storage.publication_packages import require_packages
+    packaged = require_packages(connection)
+    package_path = package_sha256 = None
+    if packaged:
+        package_path, package_sha256 = _write_publication_package(
         connection, edition=edition, revision_id=edition["revision_id"],
         ai_artifacts=get_ai_artifacts(connection, edition["revision_id"], roots),
         publish_path=path, publish_bytes=data, ai_template="ai-draft-v2" if edition["content_version"] == 2 else "ai-draft-v1",
@@ -286,10 +294,11 @@ def publish_edition(connection: sqlite3.Connection, *, edition_id: str,
         }
         registered = repository.register_release(edition=current, release=release,
                                                  expected_release_id=expected_release_id, actor=actor)
-        connection.execute(
-            "INSERT INTO publication_packages(release_id,relative_path,package_sha256) VALUES (?,?,?)",
-            (registered["release_id"], package_path, package_sha256),
-        )
+        if packaged:
+            connection.execute(
+                "INSERT INTO publication_packages(release_id,relative_path,package_sha256) VALUES (?,?,?)",
+                (registered["release_id"], package_path, package_sha256),
+            )
         return {**registered, "package_path": package_path, "package_sha256": package_sha256, "idempotent": False}
 
 

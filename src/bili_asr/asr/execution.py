@@ -90,6 +90,8 @@ def execution_policy(config: Any, models: Any, *, prefetch: bool, prefetch_bytes
     encoded = json.dumps(asdict(config), sort_keys=True, ensure_ascii=False, allow_nan=False).encode()
     return {"schema_version": 1, "backend": {"requested": "huggingface", "resolved": "huggingface"},
             "runtime_config_sha256": hashlib.sha256(encoded).hexdigest(),
+            "output_policy": {"schema_version": 1, "alignment_decoder": config.alignment_decoder,
+                              "coverage_policy": config.coverage_policy},
             "asr_precision": {"requested": config.model_dtype, "resolved": _dtype(models.model)},
             "aligner_precision": {"requested": config.aligner_dtype, "resolved": _dtype(models.aligner)},
             "asr_attention": {"requested": "checkpoint_default" if config.asr_attention == "default" else config.asr_attention,

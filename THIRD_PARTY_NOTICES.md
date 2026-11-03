@@ -6,7 +6,7 @@ This repository is extracted from bilibili-asr-archive and retains its GPL-3.0-o
 
 | Component | Notice handling |
 | --- | --- |
-| requests, transformers, accelerate | Apache-2.0; retain original license and applicable NOTICE |
+| requests, transformers, accelerate, boto3, botocore | Apache-2.0; retain original license and applicable NOTICE |
 | soundfile | Python wrapper BSD; bundled libsndfile LGPL, with separate obligations |
 | soxr 1.1.0 | LGPL-2.1-or-later; retain libsoxr/PFFFT notices and applicable source |
 | certifi, tqdm | Preserve MPL and other applicable file licenses; check secondary-license conditions |

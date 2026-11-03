@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SuperCatQR/bilibili-asr-archive/docs/contracts/s3-compatible-v1.schema.json",
+  "title": "Private S3-compatible endpoint binding v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["backend", "target_id", "endpoint", "bucket", "access_key_env", "secret_key_env", "private_bucket"],
+  "properties": {
+    "backend": {"const": "s3-compatible/v1"},
+    "target_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$"},
+    "endpoint": {"type": "string", "maxLength": 2048},
+    "bucket": {"type": "string", "minLength": 3, "maxLength": 63},
+    "prefix": {"type": "string", "maxLength": 1024},
+    "region": {"type": "string", "pattern": "^[A-Za-z0-9-]{1,63}$"},
+    "access_key_env": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,127}$"},
+    "secret_key_env": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,127}$"},
+    "session_token_env": {"type": ["string", "null"], "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,127}$"},
+    "addressing_style": {"enum": ["path", "virtual"]},
+    "part_size": {"type": "integer", "minimum": 5242880, "maximum": 67108864},
+    "timeout": {"type": "number", "exclusiveMinimum": 0, "maximum": 300},
+    "download_range_bytes": {"oneOf": [{"const": 0}, {"type": "integer", "minimum": 1048576, "maximum": 67108864}], "default": 0},
+    "private_bucket": {"const": true},
+    "allow_local_http": {"type": "boolean", "default": false}
+  }
+}

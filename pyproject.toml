@@ -23,6 +23,7 @@ bili-asr = "bili_asr.cli:main"
 [project.optional-dependencies]
 remote = [
     "paramiko>=5.0,<6",
+    "boto3>=1.40,<2",
 ]
 dev = [
     "mypy>=1.19,<3",
@@ -91,7 +92,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 "bili_asr" = ["_build_identity.json"]
 "bili_asr.contracts" = ["schemas/*.json", "database-fingerprints.json"]
-"bili_asr.storage" = ["schema.sql", "schema-transcripts.sql", "schema-workflow.sql", "schema-editorial.sql", "schema-editorial-replay-index.sql", "schema-content-v2.sql", "schema-observations.sql", "schema-source-observations.sql", "schema-source-sync.sql", "schema-preserved-body-import.sql", "schema-source-supplements.sql", "schema-artifact-storage.sql", "schema-artifact-online.sql", "schema-rights.sql", "migration-source-bilibili-v1.json"]
+"bili_asr.storage" = ["schema.sql", "schema-transcripts.sql", "schema-workflow.sql", "schema-editorial.sql", "schema-publication-packages.sql", "schema-workflow-batches.sql", "schema-editorial-replay-index.sql", "schema-content-v2.sql", "schema-observations.sql", "schema-source-observations.sql", "schema-source-sync.sql", "schema-preserved-body-import.sql", "schema-source-supplements.sql", "schema-artifact-storage.sql", "schema-artifact-storage-v2-upgrade.sql", "schema-artifact-online.sql", "schema-rights.sql", "migration-source-bilibili-v1.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

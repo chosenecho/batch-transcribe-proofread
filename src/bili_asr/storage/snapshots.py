@@ -148,10 +148,10 @@ def _schema(connection: sqlite3.Connection) -> dict[str, Any]:
 
 @lru_cache(maxsize=128)
 def _current_contract(kind: str = "bilibili-v1", imports: bool = False, supplements: bool = False,
-                      artifacts: bool = False, online: bool = False,
-                      rights: bool = False, observations: bool = False) -> tuple[dict[str, Any], str]:
+                      artifacts: bool | str = False, online: bool = False,
+                      rights: bool = False, observations: bool = False, packages: bool | str = False, batches: bool = False) -> tuple[dict[str, Any], str]:
     from bili_asr.contracts.fingerprints import database_fingerprint
-    registered = database_fingerprint(kind, imports, supplements, artifacts, online, rights, observations)
+    registered = database_fingerprint(kind, imports, supplements, artifacts, online, rights, observations, packages, batches)
     from bili_asr.storage.archive_contracts import BILIBILI_V1, bootstrap_contract, _resource
     with closing(sqlite3.connect(":memory:")) as connection:
         if kind == BILIBILI_V1:
@@ -166,12 +166,21 @@ def _current_contract(kind: str = "bilibili-v1", imports: bool = False, suppleme
         if artifacts:
             from bili_asr.storage.archive_contracts import _resource
             connection.executescript(_resource("schema-artifact-storage.sql"))
+            if artifacts == "v2":
+                connection.executescript(_resource("schema-artifact-storage-v2-upgrade.sql"))
         if online:
             connection.executescript(_resource("schema-artifact-online.sql"))
         if rights:
             connection.executescript(_resource("schema-rights.sql"))
         if observations:
             connection.executescript(_resource("schema-source-observations.sql"))
+        if packages:
+            from bili_asr.storage.publication_packages import objects as package_objects
+            for name, (_, sql) in package_objects().items():
+                if packages != "embedded" or ("publication_package_legacy" not in name and "publication_packages_contract" not in name):
+                    connection.execute(sql)
+        if batches:
+            connection.executescript(_resource("schema-workflow-batches.sql"))
         required = _schema(connection)
     canonical = json.dumps(required, sort_keys=True, separators=(",", ":"))
     computed = "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
@@ -210,9 +219,15 @@ def validate_snapshot_database(database_path: Path, expected_contract: str | Non
             rights = bool(existing_rights_objects)
             from bili_asr.storage.source_observations import require_observations, ObservationRepository, verify_frozen_source_bindings
             observations = require_observations(connection)
+            from bili_asr.storage.publication_packages import require_packages
+            packages = require_packages(connection)
+            from bili_asr.storage.workflow_batches import require_batches
+            batches = require_batches(connection)
+            from bili_asr.storage.extension_contracts import artifact_catalog_version
+            artifacts = require_artifact_catalog(connection)
             required, contract = _current_contract(runtime_contract(connection), require_import_extension(connection),
-                                                   require_supplement_extension(connection), require_artifact_catalog(connection),
-                                                   require_artifact_online(connection), rights, observations)
+                                                   require_supplement_extension(connection), "v2" if artifact_catalog_version(connection) == 2 else artifacts,
+                                                   require_artifact_online(connection), rights, observations, packages, batches)
             ObservationRepository(connection).verify()
             verify_frozen_source_bindings(connection)
             if runtime_contract(connection) == "universal-v2":
@@ -387,7 +402,13 @@ def required_artifacts(database_path: Path) -> dict[str, str | None]:
                 for row in releases:
                     release = repository.release(row["release_id"])
                     verify_release_identity(connection, release)
+                    from bili_asr.storage.publication_packages import package_record
+                    package_record(connection, row["release_id"])
                     add(release["relative_path"], release["artifact_sha256"])
+            from bili_asr.storage.publication_packages import require_packages
+            if require_packages(connection):
+                for key, sha256 in connection.execute("SELECT relative_path,package_sha256 FROM publication_packages"):
+                    add(key, sha256)
             invalid_head = connection.execute(
                 "SELECT h.video_part_id FROM publication_heads h "
                 "LEFT JOIN publication_releases r ON r.release_id = h.current_release_id "

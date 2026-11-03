@@ -329,6 +329,10 @@ def require_manuscript_schema(connection: sqlite3.Connection) -> None:
     if runtime_contract(connection) == UNIVERSAL_V2:
         require_universal_contract(connection)
         return
+    from bili_asr.storage.publication_package_contract import require_packages
+    from bili_asr.storage.workflow_batch_contract import require_batches
+    require_batches(connection)
+    require_packages(connection)
     expected = _manuscript_schema_objects()
     actual = {
         str(row[0]): (str(row[1]), str(row[2]))

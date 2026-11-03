@@ -41,7 +41,7 @@ class MetadataSearchIndex:
 
     def _connect(self) -> sqlite3.Connection:
         if not self.db_path.is_file():
-            raise SearchIndexMissingError("metadata store missing — collect metadata with `bili-asr fetch-meta`")
+            raise SearchIndexMissingError("metadata store missing; use archive init and input import")
         try:
             connection = sqlite3.connect(self.db_path.resolve().as_uri() + "?mode=ro", uri=True)
             connection.row_factory = sqlite3.Row

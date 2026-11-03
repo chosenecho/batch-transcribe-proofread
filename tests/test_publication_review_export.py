@@ -35,6 +35,8 @@ def files(output):
 def reader(request, tmp_path):
     root = tmp_path / "archive"
     connection, revision, roots = seeded_publication(root)
+    from bili_asr.storage.publication_packages import install_packages
+    install_packages(connection)
     initial = create_edition(connection, revision_id=revision, artifact_roots=roots, actor="editor")
     edition = edit_edition(connection, edition_id=initial["edition_id"], markdown_text="Manual reader edit.\n",
                            actor="editor", note="Private edit reason")

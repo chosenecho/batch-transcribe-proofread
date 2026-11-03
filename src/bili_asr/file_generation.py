@@ -2,7 +2,46 @@
 from __future__ import annotations
 
 import os
+import sys
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from pathlib import Path
 from typing import BinaryIO
+
+
+@contextmanager
+def change_watch(path: Path) -> Iterator[Callable[[], bool]]:
+    """Observe Linux writes even when same-tick ABA preserves the stat tuple."""
+    if sys.platform != "linux":
+        yield lambda: False
+        return
+    import ctypes
+
+    libc = ctypes.CDLL(None, use_errno=True)
+    initialize = libc.inotify_init1
+    initialize.argtypes, initialize.restype = [ctypes.c_int], ctypes.c_int
+    add = libc.inotify_add_watch
+    add.argtypes, add.restype = [ctypes.c_int, ctypes.c_char_p, ctypes.c_uint32], ctypes.c_int
+    descriptor = initialize(os.O_CLOEXEC | os.O_NONBLOCK)
+    if descriptor < 0:
+        raise OSError(ctypes.get_errno(), "cannot establish audio write observation")
+    try:
+        # MODIFY, ATTRIB, DELETE_SELF and MOVE_SELF; overflow/ignored also fail closed.
+        if add(descriptor, os.fsencode(path), 0x2 | 0x4 | 0x400 | 0x800) < 0:
+            raise OSError(ctypes.get_errno(), "cannot observe private audio input")
+        changed = False
+
+        def observed() -> bool:
+            nonlocal changed
+            try:
+                changed = bool(os.read(descriptor, 4096)) or changed
+            except BlockingIOError:
+                pass
+            return changed
+
+        yield observed
+    finally:
+        os.close(descriptor)
 
 
 def stream_generation(source: BinaryIO) -> tuple[int, ...]:

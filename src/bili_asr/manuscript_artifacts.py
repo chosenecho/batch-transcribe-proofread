@@ -3,20 +3,19 @@ from __future__ import annotations
 
 import hashlib
 import json
-from pathlib import Path
 import re
 import sqlite3
-from typing import Iterable
+from collections.abc import Iterable
+from pathlib import Path
 
-from bili_asr.services.artifact_readers import read_retained_text
 from bili_asr.manuscript_templates import AI_RENDERERS, renderer_for
+from bili_asr.services.artifact_readers import read_retained_text
 from bili_asr.storage.archive_contracts import frozen_version
-from bili_asr.storage.publication import PublicationRepository, read_revision
+from bili_asr.storage.editorial_revision import read_revision
 
 
 def get_ai_artifacts(connection: sqlite3.Connection, revision_id: str,
                      artifact_roots: Iterable[Path]) -> dict[str, bytes]:
-    PublicationRepository(connection)
     revision, prepared = read_revision(connection, revision_id)
     input_version = frozen_version(connection, "input", prepared["input_id"])
     rows = connection.execute(

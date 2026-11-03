@@ -16,6 +16,7 @@ from uuid import uuid4
 from bili_asr.artifact_inventory import stream_hash
 from bili_asr.artifact_root import ArtifactRoots, iter_audio_paths
 from bili_asr.file_generation import stream_generation as _generation
+from bili_asr.file_generation import change_watch
 from bili_asr.path_policy import confined_audio_file, confined_audio_path
 from bili_asr.storage.artifact_catalog import ArtifactCatalog
 from bili_asr.workflow_errors import JobExecutionError
@@ -32,6 +33,7 @@ class VerifiedAudioInput:
     source_key: str
     source_generation: tuple[int, ...]
     checkpoint: Callable[[], None]
+    changed: Callable[[], bool]
 
     def assert_unchanged(self) -> None:
         """Refuse results if the fixed inode was written during inference."""
@@ -44,7 +46,7 @@ class VerifiedAudioInput:
                 "stage": "after-inference", "expected_sha256": self.sha256,
                 "expected_byte_size": self.byte_size, "actual_sha256": actual_sha256,
                 "actual_byte_size": actual_size, "action": "restore-input-then-retry"})
-        if before != self.generation or after != self.generation:
+        if before != self.generation or after != self.generation or self.changed():
             raise _generation_changed("after-inference", self.generation, after)
         try:
             with confined_audio_file(self.source_base, self.source_key) as path, open(path, "rb") as source:
@@ -146,6 +148,11 @@ def verified_audio_input(connection: sqlite3.Connection, roots: ArtifactRoots, p
                 with fixed.open("xb") as destination:
                     size, sha256 = _clone_or_copy(source, destination, checkpoint)
                 after = _generation(source)
+            try:
+                changed = reservation.enter_context(change_watch(fixed))
+            except OSError:
+                raise JobExecutionError("audio_generation_changed", {
+                    "stage": "before-inference", "reason": "write-observation-unavailable"}) from None
             with fixed.open("rb") as copied:
                 generation = _generation(copied)
             checkpoint()
@@ -173,7 +180,7 @@ def verified_audio_input(connection: sqlite3.Connection, roots: ArtifactRoots, p
                         "generation_sha256": _generation_sha256(source_generation), "verified_at": int(time.time())}
         try:
             yield VerifiedAudioInput(fixed, {**dict(result), "verification": verification}, size, sha256, generation,
-                                     base, key, source_generation, checkpoint)
+                                     base, key, source_generation, checkpoint, changed)
         finally:
             fixed.unlink(missing_ok=True)
             reservation.close()
