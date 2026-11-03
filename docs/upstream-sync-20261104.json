@@ -699,6 +699,11 @@
       "packageCount": 97,
       "packageVersionsChangedByIndexRepair": 0,
       "firstRemoteAttempt": "Dependency lock rejected due to local mirror registry; repaired using project index without removing --locked."
+    },
+    "supervisorBoundaryRecheck": {
+      "passed": 4,
+      "platform": "Windows",
+      "controllerProtocol": "Actual WorkerShutdown signal and drain-file protocol; POSIX fake previously lacked SIGTERM handling."
     }
   },
   "archiveReadCompatibility": [
@@ -1529,7 +1534,7 @@
     },
     {
       "path": "tests/test_sync_boundary.py",
-      "sha256": "b3d90ada17a83d77b35aafb2ad871313045f060302a97d010af1c886c706872c",
+      "sha256": "42628c0c7727bcd7dbc10f2487bb404d0897ac7b59ceb7edab9999d058e64f98",
       "provenance": "downstream-specific",
       "upstream_sha256": null
     },

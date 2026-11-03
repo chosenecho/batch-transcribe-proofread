@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 import sqlite3
+import threading
 import time
 
 import pytest
@@ -73,15 +74,22 @@ def test_offline_cloud_selection_deduplicates_without_network(tmp_path, monkeypa
 
 
 def _cooperative_controller(options, role, worker_id):
+    from bili_asr.workflow_shutdown import WorkerShutdown
+
     root = Path(options['archive_root'])
-    (root / 'ready').write_text(worker_id, encoding='utf-8')
-    deadline = time.monotonic() + 15
-    while not Path(options['drain_file']).exists():
-        if time.monotonic() >= deadline:
-            raise RuntimeError('drain was never delivered')
-        time.sleep(.01)
-    time.sleep(.15)
-    (root / 'finished').write_text(role, encoding='utf-8')
+    # The real controller installs WorkerShutdown before accepting work. Reuse
+    # that protocol so POSIX SIGTERM requests a drain instead of killing the fake.
+    with WorkerShutdown(threading.Event(), drain_file=options['drain_file'],
+                        timeout=options['drain_timeout']).install() as shutdown:
+        (root / 'ready').write_text(worker_id, encoding='utf-8')
+        deadline = time.monotonic() + 15
+        while not shutdown.requested():
+            if time.monotonic() >= deadline:
+                raise RuntimeError('drain was never delivered')
+            time.sleep(.01)
+        time.sleep(.15)
+        shutdown.checkpoint()
+        (root / 'finished').write_text(role, encoding='utf-8')
 
 
 def test_supervisor_drains_owned_child_before_forced_termination(tmp_path):
