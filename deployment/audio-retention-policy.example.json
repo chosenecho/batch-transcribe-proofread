@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "mode": "off",
+  "target_id": null,
+  "selection": {
+    "kinds": [
+      "audio"
+    ],
+    "platforms": [],
+    "creator_ids": [],
+    "video_ids": [],
+    "part_ids": [],
+    "versions": []
+  },
+  "minimum_age_seconds": 86400,
+  "trigger_free_bytes": 10737418240,
+  "stop_free_bytes": 21474836480,
+  "minimum_free_bytes": 1073741824,
+  "batch_bytes": 1073741824,
+  "batch_objects": 100,
+  "max_concurrency": 1,
+  "bytes_per_second": 16777216,
+  "scan_interval_seconds": 60,
+  "backoff_seconds": 300,
+  "priority": "oldest",
+  "download_bytes_per_second": 256000,
+  "download_workspace_multiplier": 3,
+  "allow_delete": false,
+  "compression_level": 6,
+  "minimum_verified_copies": 1,
+  "replica_target_ids": [],
+  "local_retention_seconds": 604800,
+  "maximum_local_audio_bytes": 21474836480
+}

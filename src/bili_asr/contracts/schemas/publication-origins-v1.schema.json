@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Universal Publication Origins Version 1",
+  "type": "object", "additionalProperties": false,
+  "required": ["schemaVersion", "manuscriptType", "contractProfile", "entries"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "manuscriptType": {"enum": ["publication", "publication-draft"]},
+    "contractProfile": {"const": "universal-origin-v1"},
+    "entries": {"type": "array", "items": {"$ref": "#/$defs/origin"}}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "edition": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "time": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+    "supplement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supplementId",
+        "evidence"
+      ],
+      "properties": {
+        "supplementId": {
+          "$ref": "#/$defs/hash"
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "version",
+            "platform",
+            "externalVideoId",
+            "partIndex",
+            "videoPartId",
+            "cid",
+            "field",
+            "value",
+            "sourceKind",
+            "observedAt"
+          ],
+          "properties": {
+            "version": {
+              "const": 1
+            },
+            "platform": {
+              "const": "bilibili"
+            },
+            "externalVideoId": {
+              "type": "string"
+            },
+            "partIndex": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "videoPartId": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "cid": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "field": {
+              "const": "partTitle"
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            "sourceKind": {
+              "const": "archive-part-projection"
+            },
+            "observedAt": {
+              "type": "null"
+            }
+          }
+        }
+      }
+    },
+    "origin": {
+      "type": "object",
+      "required": ["kind", "editionId", "aiRevisionId", "videoPartId", "contentSha256", "sourceMetadataSha256", "inputVersion", "aiTemplateVersion"],
+      "properties": {
+        "kind": {"enum": ["ai-generated-v2", "preserved-legacy-body", "edited-after-preservation"]},
+        "editionId": {"$ref": "#/$defs/edition"},
+        "aiRevisionId": {"$ref": "#/$defs/hash"},
+        "videoPartId": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+        "contentSha256": {"$ref": "#/$defs/hash"},
+        "sourceMetadataSha256": {"$ref": "#/$defs/hash"}
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "kind": {"const": "ai-generated-v2"},
+            "inputVersion": {"const": 2},
+            "aiTemplateVersion": {"const": "ai-draft-v2"}
+          }
+        },
+        {
+          "required": ["importId", "policyVersion", "legacyAiRevisionId", "legacyEditionId", "legacyReleaseId", "baselineBodySha256", "currentBodySha256", "reviewArtifactSha256", "importedAt", "bodyPreserved", "metadataEvidence"],
+          "properties": {
+            "kind": {"enum": ["preserved-legacy-body", "edited-after-preservation"]},
+            "inputVersion": {"const": 1},
+            "aiTemplateVersion": {"const": "ai-draft-v1"},
+            "importId": {"$ref": "#/$defs/hash"},
+            "policyVersion": {"enum": ["legacy-frozen-facts-v1", "legacy-part-title-supplement-v1"]},
+            "legacyAiRevisionId": {"$ref": "#/$defs/hash"},
+            "legacyEditionId": {"oneOf": [{"$ref": "#/$defs/edition"}, {"type": "null"}]},
+            "legacyReleaseId": {"oneOf": [{"$ref": "#/$defs/hash"}, {"type": "null"}]},
+            "baselineBodySha256": {"$ref": "#/$defs/hash"},
+            "currentBodySha256": {"$ref": "#/$defs/hash"},
+            "reviewArtifactSha256": {"$ref": "#/$defs/hash"},
+            "importedAt": {"$ref": "#/$defs/time"},
+            "bodyPreserved": {"type": "boolean"},
+            "metadataSupplement": {"$ref": "#/$defs/supplement"},
+            "metadataEvidence": {"type": "array", "minItems": 17, "maxItems": 17, "items": {
+              "type": "object", "additionalProperties": false,
+              "required": ["field", "kind", "observedAt", "valueSha256"],
+              "properties": {
+                "field": {"enum": ["version", "platform", "externalVideoId", "partIndex", "title", "creatorId", "creatorName", "pubdateUnix", "sourcePublishedAt", "metadataObservedAt", "description", "coverUrl", "categoryId", "tags", "aid", "partTitle", "durationMs"]},
+                "kind": {"enum": ["legacy-input", "unobserved", "archive-part-projection"]},
+                "observedAt": {"type": "null"},
+                "valueSha256": {"$ref": "#/$defs/hash"}
+              }
+            }}
+          },
+          "allOf": [{
+            "if": {"properties": {"kind": {"const": "preserved-legacy-body"}}},
+            "then": {"properties": {"bodyPreserved": {"const": true}}},
+            "else": {"properties": {"bodyPreserved": {"const": false}}}
+          }, {
+            "if": {"properties": {"policyVersion": {"const": "legacy-part-title-supplement-v1"}}},
+            "then": {"required": ["metadataSupplement"]},
+            "else": {"not": {"required": ["metadataSupplement"]}}
+          }]
+        }
+      ],
+      "unevaluatedProperties": false
+    }
+  }
+}

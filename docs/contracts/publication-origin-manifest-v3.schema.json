@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Universal Origin Export Manifest Version 3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "manuscriptType",
+    "contractProfile",
+    "snapshotId",
+    "files"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 3
+    },
+    "manuscriptType": {
+      "enum": [
+        "publication-export",
+        "publication-draft-export"
+      ]
+    },
+    "contractProfile": {
+      "const": "universal-origin-v2"
+    },
+    "snapshotId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "files": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "contains": {
+            "properties": {
+              "path": {
+                "const": "catalog.json"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "path": {
+                "const": "origins.json"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "manuscriptType": {
+            "const": "publication-export"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "files": {
+            "items": {
+              "properties": {
+                "path": {
+                  "pattern": "^(catalog\\.json|origins\\.json|content-rights\\.json|series\\.json|articles/part-[1-9][0-9]*/(publish|review)\\.md)$"
+                }
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "files": {
+            "items": {
+              "properties": {
+                "path": {
+                  "pattern": "^(catalog\\.json|origins\\.json|content-rights\\.json|series\\.json|drafts/edition-[0-9a-f]{32}/(preview|review)\\.md)$"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

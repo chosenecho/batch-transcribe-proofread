@@ -1,0 +1,39 @@
+{
+ "segments": [
+  {
+   "start": 0.0,
+   "end": 3.2,
+   "text": "大家好，我们今天继续讨论。"
+  },
+  {
+   "start": 3.2,
+   "end": 6.0,
+   "text": "首先看一下基本的情况。"
+  },
+  {
+   "start": 6.0,
+   "end": 9.4,
+   "text": "这个问题的背景是这样的。"
+  },
+  {
+   "start": 12.0,
+   "end": 15.0,
+   "text": "所以我们先给出结论。"
+  },
+  {
+   "start": 15.0,
+   "end": 18.2,
+   "text": "结论就是前面说的那样。"
+  },
+  {
+   "start": 19.0,
+   "end": 22.0,
+   "text": "谢谢大家收看。"
+  }
+ ],
+ "source": "asr",
+ "provenance": {
+  "model": "synthetic-fixture",
+  "note": "synthetic BV1proofClean:p0 ASR route"
+ }
+}

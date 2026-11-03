@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "platform": "bilibili",
+      "external_id": "BV1xx411c7mD",
+      "page_index": 0,
+      "title": "示例：替换为实际视频标题",
+      "audio": "media/example.m4a",
+      "mid": 1,
+      "uploader": "替换为实际作者",
+      "cid": 1,
+      "pubdate": 0
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SuperCatQR/bilibili-asr-archive/docs/contracts/publication-draft-catalog.schema.json",
+  "title": "Reader Publication Draft Catalog Version 2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "manuscriptType", "articles"],
+  "properties": {
+    "schemaVersion": {"const": 2},
+    "manuscriptType": {"const": "publication-draft"},
+    "articles": {"type": "array", "items": {"$ref": "#/$defs/article"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "article": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manuscriptType", "slug", "title", "summary", "tags", "attribution", "editorNote", "editionId", "aiRevisionId", "videoPartId", "bvid", "pageIndex", "sourceUrl", "contentSha256", "artifactSha256", "reviewStatus", "createdAt", "file", "reviewFile", "reviewArtifactSha256"],
+      "properties": {
+        "manuscriptType": {"const": "publication-draft"},
+        "slug": {"type": "string", "pattern": "^edition-[0-9a-f]{32}$"},
+        "title": {"type": "string", "minLength": 1},
+        "summary": {"type": "string"},
+        "tags": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "attribution": {"type": "string", "minLength": 1},
+        "editorNote": {"type": "string"},
+        "editionId": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "aiRevisionId": {"$ref": "#/$defs/sha256"},
+        "videoPartId": {"type": "integer", "minimum": 1},
+        "bvid": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
+        "pageIndex": {"type": "integer", "minimum": 0},
+        "sourceUrl": {"type": "string", "pattern": "^https://www\\.bilibili\\.com/video/[A-Za-z0-9_-]+/\\?p=[1-9][0-9]*$"},
+        "contentSha256": {"$ref": "#/$defs/sha256"},
+        "artifactSha256": {"$ref": "#/$defs/sha256"},
+        "reviewStatus": {"enum": ["pending-review", "in-review", "changes-requested", "approved", "rejected"]},
+        "createdAt": {"type": "integer", "minimum": 0, "description": "Edition creation Unix timestamp in seconds"},
+        "file": {"type": "string", "pattern": "^drafts/edition-[0-9a-f]{32}/preview\\.md$"},
+        "reviewFile": {"type": "string", "pattern": "^drafts/edition-[0-9a-f]{32}/review\\.md$"},
+        "reviewArtifactSha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

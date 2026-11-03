@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SuperCatQR/bilibili-asr-archive/docs/contracts/archive-reference-backup-v1.schema.json",
+  "title": "Non-self-contained archive reference backup v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "format_version", "self_contained", "backup_id", "created_at", "database_contract", "files", "dependencies", "target_instances", "affected_jobs", "operational_state", "handoff"],
+  "properties": {
+    "format": {"const": "archive-reference-backup"},
+    "format_version": {"type": "integer", "const": 1},
+    "self_contained": {"const": false},
+    "backup_id": {"type": "string", "minLength": 32, "maxLength": 32, "pattern": "^[0-9a-f]{32}$"},
+    "created_at": {"type": "integer", "minimum": 0},
+    "database_contract": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$", "minLength": 71, "maxLength": 71},
+    "files": {"type": "array", "minItems": 1, "maxItems": 100000, "items": {"$ref": "#/$defs/file"}},
+    "dependencies": {"type": "array", "maxItems": 100000, "items": {"$ref": "#/$defs/dependency"}},
+    "target_instances": {"type": "object", "propertyNames": {"$ref": "#/$defs/target"}, "additionalProperties": {"type": "string", "minLength": 32, "maxLength": 32, "pattern": "^[0-9a-f]{32}$"}},
+    "affected_jobs": {"type": "object", "propertyNames": {"$ref": "#/$defs/hash"}, "additionalProperties": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["job_id", "kind", "status"], "properties": {"job_id": {"type": "string", "minLength": 1}, "kind": {"type": "string", "minLength": 1}, "status": {"type": "string", "minLength": 1}}}}},
+    "operational_state": {"type": "object", "additionalProperties": false, "required": ["verified", "holds"], "properties": {"verified": {"type": "boolean"}, "holds": {"type": "object", "additionalProperties": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1, "maxLength": 2048}}}}},
+    "handoff": {"const": "stop-old-workers-before-new-workers; no-automatic-recovery-or-retry"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "minLength": 64, "maxLength": 64, "pattern": "^[0-9a-f]{64}$"},
+    "target": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"},
+    "path": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "size": {"type": "integer", "minimum": 0},
+    "file": {"type": "object", "additionalProperties": false, "required": ["path", "size", "sha256"], "properties": {"path": {"$ref": "#/$defs/path"}, "size": {"$ref": "#/$defs/size"}, "sha256": {"$ref": "#/$defs/hash"}}},
+    "replica": {"type": "object", "additionalProperties": false, "required": ["target_id", "relative_key", "package_id", "member_key", "generation", "package_sha256", "package_byte_size", "manifest_sha256"], "properties": {"target_id": {"$ref": "#/$defs/target"}, "relative_key": {"type": "string", "pattern": "^packages/artifact-[0-9a-f]{64}\\.zip$", "maxLength": 86}, "package_id": {"$ref": "#/$defs/hash"}, "member_key": {"type": "string", "pattern": "^objects/[0-9a-f]{64}$", "minLength": 72, "maxLength": 72}, "generation": {"type": "integer", "minimum": 1}, "package_sha256": {"$ref": "#/$defs/hash"}, "package_byte_size": {"$ref": "#/$defs/size"}, "manifest_sha256": {"$ref": "#/$defs/hash"}}},
+    "dependency": {"type": "object", "additionalProperties": false, "required": ["path", "object_id", "size", "replicas"], "properties": {"path": {"$ref": "#/$defs/path"}, "object_id": {"$ref": "#/$defs/hash"}, "size": {"$ref": "#/$defs/size"}, "replicas": {"type": "array", "minItems": 1, "maxItems": 10000, "items": {"$ref": "#/$defs/replica"}}}}
+  }
+}

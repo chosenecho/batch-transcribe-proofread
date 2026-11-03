@@ -1,0 +1,19 @@
+[Unit]
+Description=Independent verified audio retention for bili-asr
+After=local-fs.target
+RequiresMountsFor=/mnt/audio-backup
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/batch-transcribe-proofread
+ExecStart=/opt/batch-transcribe-proofread/.venv/bin/bili-asr artifacts policy-run --archive-root /srv/bili-asr --policy-id audio --target-root /mnt/audio-backup --holds-file /etc/bili-asr/audio-holds.json --watch --drain-file /run/bili-asr/audio-retention.stop
+ExecStop=/usr/bin/touch /run/bili-asr/audio-retention.stop
+KillSignal=SIGINT
+TimeoutStopSec=30
+Restart=on-failure
+RestartSec=30
+RuntimeDirectory=bili-asr
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

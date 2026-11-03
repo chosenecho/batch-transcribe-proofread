@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Private artifact provenance closure version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "schema_version",
+    "selection_policy",
+    "reader_version",
+    "selector",
+    "roots",
+    "nodes",
+    "graph_sha256"
+  ],
+  "properties": {
+    "format": {
+      "const": "artifact-provenance/v1"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "selection_policy": {
+      "const": "frozen-input-and-recorded-producers/v1"
+    },
+    "reader_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "selector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "value"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "artifact",
+            "edition",
+            "release",
+            "revision"
+          ]
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "roots": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "maxItems": 25000,
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 25000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "identity",
+          "record",
+          "dependencies",
+          "sha256"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "release",
+              "edition",
+              "revision",
+              "input",
+              "transcript",
+              "producer",
+              "workflow-attempt",
+              "call",
+              "checkpoint",
+              "artifact",
+              "source",
+              "observation",
+              "metadata-acceptance",
+              "audio"
+            ]
+          },
+          "identity": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "record": {
+            "type": "object"
+          },
+          "dependencies": {
+            "type": "array",
+            "uniqueItems": true,
+            "maxItems": 25000,
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "graph_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

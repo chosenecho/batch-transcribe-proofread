@@ -1,0 +1,501 @@
+{
+  "format_version": 1,
+  "source_commit": "91aeb026cb714d24939518abbacaf146d98cbd32",
+  "contracts": [
+    {
+      "identity": "archive-reference-backup/v1",
+      "capabilities": [
+        "validate",
+        "save",
+        "check",
+        "plan",
+        "restore"
+      ],
+      "consumers": [
+        "cli.remote_storage",
+        "services.archive_recovery"
+      ]
+    },
+    {
+      "identity": "ssh-directory/v1",
+      "capabilities": [
+        "validate",
+        "upload",
+        "read",
+        "range-read"
+      ],
+      "consumers": [
+        "services.remote_artifacts",
+        "services.reference_backup"
+      ]
+    },
+    {
+      "identity": "artifact-state-v1",
+      "capabilities": [
+        "read",
+        "validate"
+      ],
+      "consumers": [
+        "cli.artifacts"
+      ]
+    },
+    {
+      "identity": "artifact-publication-state-v1",
+      "capabilities": [
+        "read",
+        "validate"
+      ],
+      "consumers": [
+        "coverage_report",
+        "integrity",
+        "services.workflow_projection"
+      ]
+    },
+    {
+      "identity": "artifact-storage-v1",
+      "capabilities": [
+        "extension",
+        "snapshot",
+        "explicit-upgrade"
+      ],
+      "consumers": [
+        "storage.artifact_catalog",
+        "services.artifact_catalog_upgrade",
+        "storage.snapshots"
+      ]
+    },
+    {
+      "identity": "artifact-inventory-v1",
+      "capabilities": [
+        "validate",
+        "read"
+      ],
+      "consumers": [
+        "cli.artifacts"
+      ]
+    },
+    {
+      "identity": "artifact-offload-plan-v1",
+      "capabilities": [
+        "validate",
+        "read",
+        "write"
+      ],
+      "consumers": [
+        "cli.artifacts",
+        "services.artifact_transfer"
+      ]
+    },
+    {
+      "identity": "artifact-package-v1",
+      "capabilities": [
+        "validate",
+        "read",
+        "write"
+      ],
+      "consumers": [
+        "services.artifact_transfer",
+        "services.artifact_access",
+        "services.artifact_restore"
+      ]
+    },
+    {
+      "identity": "bilibili-v1",
+      "capabilities": [
+        "runtime",
+        "snapshot"
+      ],
+      "consumers": [
+        "archive_session",
+        "storage.snapshots"
+      ]
+    },
+    {
+      "identity": "universal-v2",
+      "capabilities": [
+        "runtime",
+        "snapshot",
+        "migration-target"
+      ],
+      "consumers": [
+        "archive_session",
+        "storage.snapshots",
+        "services.archive_migration"
+      ]
+    },
+    {
+      "identity": "bilibili-migration-source/v1",
+      "capabilities": [
+        "migration-source"
+      ],
+      "consumers": [
+        "storage.migration_source",
+        "services.archive_migration"
+      ]
+    },
+    {
+      "identity": "preserved-body-import-v1",
+      "capabilities": [
+        "extension",
+        "snapshot"
+      ],
+      "consumers": [
+        "storage.import_origins",
+        "services.preserved_body_import",
+        "storage.snapshots"
+      ]
+    },
+    {
+      "identity": "legacy-part-title-supplement-v1",
+      "capabilities": [
+        "extension",
+        "snapshot",
+        "export"
+      ],
+      "consumers": [
+        "storage.source_supplements",
+        "publication_origins",
+        "storage.snapshots"
+      ]
+    },
+    {
+      "identity": "legacy-frozen-facts-v1",
+      "capabilities": [
+        "content-upgrade",
+        "historical-read"
+      ],
+      "consumers": [
+        "storage.import_origins",
+        "publication_origins"
+      ]
+    },
+    {
+      "identity": "stored-segments-webvtt/v1",
+      "capabilities": [
+        "derive",
+        "export"
+      ],
+      "consumers": [
+        "cli.archive"
+      ]
+    },
+    {
+      "identity": "workflow-payload/v1",
+      "capabilities": [
+        "read",
+        "write"
+      ],
+      "consumers": [
+        "storage.workflow",
+        "workflow"
+      ]
+    },
+    {
+      "identity": "asr-profile/v2",
+      "capabilities": [
+        "read",
+        "write"
+      ],
+      "consumers": [
+        "storage.workflow",
+        "workflow_runtime"
+      ]
+    },
+    {
+      "identity": "asr-evidence/v1",
+      "capabilities": [
+        "read",
+        "write"
+      ],
+      "consumers": [
+        "storage.transcripts"
+      ]
+    },
+    {
+      "identity": "canonical-json/v1",
+      "capabilities": [
+        "hash",
+        "historical-read"
+      ],
+      "consumers": [
+        "editorial",
+        "publication_identity",
+        "storage.migration_artifacts"
+      ]
+    },
+    {
+      "identity": "archive-bundle-v2",
+      "capabilities": [
+        "read",
+        "write"
+      ],
+      "consumers": [
+        "archive",
+        "services.bundle_verification",
+        "services.archive_snapshot"
+      ]
+    },
+    {
+      "identity": "frozen-input/v1",
+      "capabilities": [
+        "historical-read",
+        "write"
+      ],
+      "consumers": [
+        "storage.editorial",
+        "manuscript_templates"
+      ]
+    },
+    {
+      "identity": "frozen-input/v2",
+      "capabilities": [
+        "read",
+        "write"
+      ],
+      "consumers": [
+        "editorial_runtime",
+        "publication_content_v2"
+      ]
+    },
+    {
+      "identity": "publication-content/v1",
+      "capabilities": [
+        "historical-read",
+        "write"
+      ],
+      "consumers": [
+        "storage.publication",
+        "publication_export"
+      ]
+    },
+    {
+      "identity": "publication-content/v2",
+      "capabilities": [
+        "read",
+        "write"
+      ],
+      "consumers": [
+        "storage.publication",
+        "publication_export"
+      ]
+    },
+    {
+      "identity": "ai-draft-v1",
+      "capabilities": [
+        "render",
+        "historical-read"
+      ],
+      "consumers": [
+        "storage.editorial",
+        "storage.migration_artifacts"
+      ]
+    },
+    {
+      "identity": "ai-draft-v2",
+      "capabilities": [
+        "render"
+      ],
+      "consumers": [
+        "manuscript_templates"
+      ]
+    },
+    {
+      "identity": "publish-v1",
+      "capabilities": [
+        "render",
+        "historical-read"
+      ],
+      "consumers": [
+        "publication_identity",
+        "storage.migration_artifacts"
+      ]
+    },
+    {
+      "identity": "publish-v2",
+      "capabilities": [
+        "render"
+      ],
+      "consumers": [
+        "publication",
+        "publication_export"
+      ]
+    },
+    {
+      "identity": "archive-snapshot/v1",
+      "capabilities": [
+        "save",
+        "check",
+        "restore"
+      ],
+      "consumers": [
+        "services.archive_snapshot",
+        "services.archive_recovery"
+      ]
+    },
+    {
+      "identity": "source-metadata/v1",
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ]
+    },
+    {
+      "identity": "publication-catalog/v2",
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ]
+    },
+    {
+      "identity": "publication-draft-catalog/v2",
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ]
+    },
+    {
+      "identity": "publication-catalog/v3",
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ]
+    },
+    {
+      "identity": "publication-draft-catalog/v3",
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ]
+    },
+    {
+      "identity": "publication-export-manifest/v1",
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ]
+    },
+    {
+      "identity": "publication-draft-export-manifest/v1",
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ]
+    },
+    {
+      "identity": "publication-origin-manifest/v2",
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ]
+    },
+    {
+      "identity": "universal-origin-v1",
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ]
+    },
+    {
+      "identity": "editorial-export-manifest/v1",
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ]
+    },
+    {
+      "identity": "editorial-import-export-manifest/v1",
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ]
+    },
+    {
+      "identity": "editorial-review/v1",
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ]
+    },
+    {
+      "identity": "editorial-review-universal/v1",
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ]
+    },
+    {
+      "identity": "publication-series/v1",
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ]
+    },
+    {
+      "identity": "publication-series-editorial/v1",
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ]
+    }
+  ]
+}

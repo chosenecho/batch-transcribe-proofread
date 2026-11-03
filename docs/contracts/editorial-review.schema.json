@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Private Editorial Review Version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "manuscriptType", "revisionId", "editionId", "videoPartId", "contentSha256", "reviewStatus", "parentEditionId", "parentContentSha256", "reviews", "events", "ai"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "manuscriptType": {"const": "editorial-review"},
+    "revisionId": {"$ref": "#/$defs/sha256"},
+    "editionId": {"$ref": "#/$defs/editionId"},
+    "videoPartId": {"type": "integer", "minimum": 1},
+    "contentSha256": {"$ref": "#/$defs/sha256"},
+    "reviewStatus": {"enum": ["pending-review", "in-review", "changes-requested", "approved", "rejected"]},
+    "parentEditionId": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/editionId"}]},
+    "parentContentSha256": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]},
+    "reviews": {"type": "array", "items": {"type": "object"}},
+    "events": {"type": "array", "items": {"type": "object"}},
+    "ai": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revisionId", "templateVersion", "qualityStatus", "createdAt", "config", "promptSha256", "artifactSha256"],
+      "properties": {
+        "revisionId": {"$ref": "#/$defs/sha256"},
+        "templateVersion": {"const": "ai-draft-v1"},
+        "qualityStatus": {"enum": ["ai-unreviewed", "needs-review"]},
+        "createdAt": {"type": "integer", "minimum": 0},
+        "config": {"type": "object"},
+        "promptSha256": {"$ref": "#/$defs/sha256"},
+        "sourceLineage": {"$ref": "editorial-source-lineage-v1.schema.json"},
+        "artifactSha256": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ai-draft.md", "review.md"],
+          "properties": {
+            "ai-draft.md": {"$ref": "#/$defs/sha256"},
+            "review.md": {"$ref": "#/$defs/sha256"}
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "editionId": {"type": "string", "pattern": "^[0-9a-f]{32}$"}
+  }
+}

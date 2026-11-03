@@ -1,0 +1,11 @@
+{
+  "segments": [
+    {"start": 0.0, "end": 4.0, "text": "我们来讨论劳动法的相关问题。"},
+    {"start": 4.0, "end": 8.0, "text": "这里涉及很多具体的案例。"},
+    {"start": 12.0, "end": 16.0, "text": "下面看一个实际发生的例子。"},
+    {"start": 16.0, "end": 20.0, "text": "这个例子说明了问题。"},
+    {"start": 30.0, "end": 34.0, "text": "所以回到最初的问题上来。"}
+  ],
+  "source": "asr",
+  "provenance": {"model": "synthetic-fixture", "note": "synthetic BV1proofHeavy:p0 ASR route"}
+}

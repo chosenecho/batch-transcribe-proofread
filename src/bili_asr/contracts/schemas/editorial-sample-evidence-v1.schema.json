@@ -1,0 +1,237 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "editorial-sample-evidence/v1"
+    },
+    "created_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "revision_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "template_version": {
+      "const": "ai-draft-v1"
+    },
+    "quality_status": {
+      "const": "needs-review"
+    },
+    "semantic_status": {
+      "const": "unverified"
+    },
+    "review_required": {
+      "const": true
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "job_id": {
+          "type": "null"
+        },
+        "attempt_id": {
+          "type": "null"
+        },
+        "reason": {
+          "const": "standalone_probe_no_workflow_job"
+        }
+      },
+      "required": [
+        "job_id",
+        "attempt_id",
+        "reason"
+      ]
+    },
+    "source_quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pre_call_gate": {
+          "const": "not_recorded"
+        },
+        "posthoc_structural_check": {
+          "type": "object"
+        },
+        "producer_admission": {
+          "enum": [
+            "unknown",
+            "usable",
+            "needs-review",
+            "unusable"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "producer_check": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "pre_call_gate",
+        "posthoc_structural_check",
+        "producer_admission",
+        "reason"
+      ]
+    },
+    "source_metadata": {
+      "type": "object"
+    },
+    "calls": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "call_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ordinal": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "outcome": {
+            "enum": [
+              "failed",
+              "reserved",
+              "validated"
+            ]
+          },
+          "started_at": {
+            "type": "string",
+            "minLength": 1
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "input_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "chunk_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "request_fingerprint": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "linkage_basis": {
+            "const": "reconstructed_from_verified_frozen_request"
+          },
+          "invocation_kind": {
+            "const": "unknown"
+          },
+          "recovery_metadata_status": {
+            "const": "not_recorded"
+          },
+          "feedback_message_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "error": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "usage": {
+            "type": "object"
+          },
+          "transport": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "call_id",
+          "ordinal",
+          "outcome",
+          "started_at",
+          "finished_at",
+          "input_id",
+          "chunk_id",
+          "request_fingerprint",
+          "linkage_basis",
+          "invocation_kind",
+          "recovery_metadata_status",
+          "feedback_message_count",
+          "error"
+        ]
+      },
+      "minItems": 1
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "enum": [
+              "ai_draft",
+              "frozen_input",
+              "issue_review",
+              "model_review",
+              "provider_envelope",
+              "provider_request",
+              "provider_response_bytes",
+              "source_lineage",
+              "source_metadata_and_transcripts",
+              "standalone_call_ledger",
+              "transport_observation",
+              "validated_revision",
+              "producer_quality_evidence"
+            ]
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "path",
+          "role",
+          "bytes",
+          "sha256"
+        ]
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "schema",
+    "created_at",
+    "input_id",
+    "revision_id",
+    "template_version",
+    "quality_status",
+    "semantic_status",
+    "review_required",
+    "workflow",
+    "source_quality",
+    "source_metadata",
+    "calls",
+    "artifacts"
+  ]
+}

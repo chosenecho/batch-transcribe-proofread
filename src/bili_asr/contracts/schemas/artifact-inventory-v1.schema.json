@@ -1,0 +1,581 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SuperCatQR/bilibili-asr-archive/docs/contracts/artifact-inventory-v1.schema.json",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "artifact-inventory-v1"
+    },
+    "database_contract": {
+      "enum": [
+        "bilibili-v1",
+        "universal-v2"
+      ]
+    },
+    "integrity_depth": {
+      "enum": [
+        "quick",
+        "deep"
+      ]
+    },
+    "external_holds_verified": {
+      "type": "boolean"
+    },
+    "selection": {
+      "type": "object",
+      "properties": {
+        "kinds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "creator_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "video_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "part_ids": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "kinds",
+        "platforms",
+        "creator_ids",
+        "video_ids",
+        "part_ids",
+        "versions"
+      ],
+      "additionalProperties": false
+    },
+    "roots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "discovered_files": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "path",
+          "state",
+          "discovered_files"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "object_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$",
+                "minLength": 64,
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "reference_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "kind": {
+                  "enum": [
+                    "audio",
+                    "bundle",
+                    "document",
+                    "release",
+                    "source-evidence",
+                    "migration"
+                  ]
+                },
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "sha256": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$",
+                      "minLength": 64,
+                      "maxLength": 64
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "expected_size": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "part_id": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "version": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "group_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "version_binding": {
+                  "enum": [
+                    "verified",
+                    "unverified"
+                  ]
+                },
+                "source": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "video_part_id": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "page_index": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "platform": {
+                          "type": "string"
+                        },
+                        "video_id": {
+                          "type": "string"
+                        },
+                        "creator_id": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "bvid": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "video_part_id",
+                        "page_index",
+                        "platform",
+                        "video_id",
+                        "creator_id",
+                        "bvid"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "reference_id",
+                "kind",
+                "path",
+                "sha256",
+                "expected_size",
+                "part_id",
+                "version",
+                "group_id",
+                "version_binding",
+                "source"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "copies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$",
+              "minLength": 64,
+              "maxLength": 64
+            }
+          },
+          "selected": {
+            "type": "boolean"
+          },
+          "retention_reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "object_id",
+          "sha256",
+          "references",
+          "copies",
+          "selected",
+          "retention_reasons"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "copies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "copy_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "minLength": 64,
+            "maxLength": 64
+          },
+          "root": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$",
+                "minLength": 64,
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "allocated_bytes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "physical_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "link_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fingerprint": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                },
+                "minItems": 5,
+                "maxItems": 5
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reference_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expected_sha256s": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$",
+              "minLength": 64,
+              "maxLength": 64
+            }
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "selected": {
+            "type": "boolean"
+          },
+          "blockers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "candidate": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "copy_id",
+          "root",
+          "path",
+          "state",
+          "size",
+          "sha256",
+          "allocated_bytes",
+          "physical_id",
+          "link_count",
+          "fingerprint",
+          "reference_ids",
+          "expected_sha256s",
+          "issues",
+          "selected",
+          "blockers",
+          "candidate"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "minLength": 1
+          },
+          "root": {
+            "type": "string"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reference_id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "references": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "objects": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "observed_paths": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "path_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "physical_content_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "allocated_bytes": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "logical_bytes": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reclaimable_content_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "target_payload_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "restore_workspace_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "candidate_copies": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "files_hashed": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "references",
+        "objects",
+        "observed_paths",
+        "path_bytes",
+        "physical_content_bytes",
+        "allocated_bytes",
+        "logical_bytes",
+        "reclaimable_content_bytes",
+        "target_payload_bytes",
+        "restore_workspace_bytes",
+        "candidate_copies",
+        "files_hashed"
+      ],
+      "additionalProperties": false
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "schema",
+    "database_contract",
+    "integrity_depth",
+    "external_holds_verified",
+    "selection",
+    "roots",
+    "objects",
+    "copies",
+    "diagnostics",
+    "summary",
+    "limitations"
+  ],
+  "additionalProperties": false
+}

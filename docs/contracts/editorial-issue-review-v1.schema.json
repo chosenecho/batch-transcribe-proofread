@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "editorial-issue-review/v1"
+    },
+    "input_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "revision_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "blocks_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "index_basis": {
+      "const": "zero_based_unicode_codepoints"
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "issue_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "paragraph_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "issue_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "model_issue": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "note": {
+                "type": "string"
+              },
+              "candidate": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "evidence_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "note",
+              "candidate",
+              "evidence_refs"
+            ]
+          },
+          "declared_segment_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "issue_type": {
+            "enum": [
+              "date_time",
+              "fluency",
+              "name",
+              "number",
+              "omission",
+              "other",
+              "recognition",
+              "source_support",
+              "unclassified",
+              "unintelligible",
+              "unit"
+            ]
+          },
+          "severity": {
+            "enum": [
+              "high",
+              "low",
+              "medium",
+              "unassessed"
+            ]
+          },
+          "status": {
+            "enum": [
+              "dismissed",
+              "in_review",
+              "open",
+              "resolved"
+            ]
+          },
+          "source_spans": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "segment_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "start_char": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "end_char": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "quote": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "segment_id",
+                "start_char",
+                "end_char",
+                "quote"
+              ]
+            }
+          },
+          "span_status": {
+            "enum": [
+              "located",
+              "unlocated"
+            ]
+          },
+          "annotation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "reviewer_kind": {
+                    "enum": [
+                      "agent",
+                      "human"
+                    ]
+                  },
+                  "reviewer": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "reviewed_at": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "note": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "reviewer_kind",
+                  "reviewer",
+                  "reviewed_at",
+                  "note"
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "issue_id",
+          "paragraph_index",
+          "issue_index",
+          "model_issue",
+          "declared_segment_ids",
+          "issue_type",
+          "severity",
+          "status",
+          "source_spans",
+          "span_status",
+          "annotation"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schema",
+    "input_id",
+    "revision_id",
+    "blocks_sha256",
+    "index_basis",
+    "issues"
+  ]
+}

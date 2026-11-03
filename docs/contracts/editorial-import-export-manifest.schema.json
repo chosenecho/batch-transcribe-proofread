@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Private Imported Editorial Export Manifest Version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "manuscriptType",
+    "snapshotId",
+    "files"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "manuscriptType": {
+      "const": "editorial-export"
+    },
+    "snapshotId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "files": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "allOf": [
+        {"contains": {"properties": {"path": {"const": "ai-draft.md"}}}},
+        {"contains": {"properties": {"path": {"const": "review.md"}}}},
+        {"contains": {"properties": {"path": {"const": "edition.md"}}}},
+        {"contains": {"properties": {"path": {"const": "edition.json"}}}},
+        {"contains": {"properties": {"path": {"const": "review.json"}}}},
+        {"contains": {"properties": {"path": {"const": "differences/ai.patch"}}}},
+        {"contains": {"properties": {"path": {"const": "differences/parent.patch"}}}},
+        {"contains": {"properties": {"path": {"const": "import-origin.json"}}}},
+        {"contains": {"properties": {"path": {"const": "preserved-body.md"}}}},
+        {"contains": {"properties": {"path": {"const": "differences/preserved.patch"}}}}
+      ],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256"
+        ],
+        "properties": {
+          "path": {
+            "enum": [
+              "ai-draft.md",
+              "review.md",
+              "edition.md",
+              "edition.json",
+              "review.json",
+              "differences/ai.patch",
+              "differences/parent.patch",
+              "import-origin.json",
+              "preserved-body.md",
+              "differences/preserved.patch"
+            ]
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    }
+  }
+}

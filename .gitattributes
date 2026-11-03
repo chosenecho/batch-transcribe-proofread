@@ -1,0 +1,15 @@
+# Current diagram byte rules are maintained in docs/.gitattributes.
+
+# Contract documentation is a byte-identical mirror of packaged resources.
+src/bili_asr/contracts/schemas/*.json -text
+docs/contracts/*.schema.json -text
+docs/contracts/registry.json -text
+# Frozen evidence hashes bind the original Git blob bytes, without checkout conversion.
+tests/fixtures/data/bilibili-v1-frozen.json -text
+tests/fixtures/data/bilibili-v1-frozen.zip -text
+tests/fixtures/data/contracts-release-baseline-v1.json -text
+docs/contract-governance.json -text
+docs/contract-governance.html -text -diff -whitespace
+# Linux service files must survive Windows checkout with LF line endings.
+scripts/deployment/* text eol=lf
+scripts/*.sh text eol=lf

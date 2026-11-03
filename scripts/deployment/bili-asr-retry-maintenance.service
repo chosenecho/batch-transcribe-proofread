@@ -1,0 +1,10 @@
+[Unit]
+Description=Bilibili archive bounded failed-job retry maintenance
+After=network.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/bili-asr/retry-maintenance.env
+ExecStart=/usr/bin/env ${BILI_ASR_BIN} retry-maintenance tick --archive-root ${ARCHIVE_ROOT} --policy ${RETRY_POLICY} --state ${PRODUCTION_STATE} --lock ${MAINTENANCE_LOCK} --health ${MAINTENANCE_HEALTH}
+TimeoutStartSec=120
+UMask=0077

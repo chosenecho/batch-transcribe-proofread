@@ -1,0 +1,716 @@
+{
+  "contract_id": "bilibili-archive-v1:sha256:07711441cb6b380fb1524b903aa540568c522c4ef6e49bf9451b3b758f6b1f16",
+  "source_revision": "9b289570494b5e8f7cc564a7eaa5b2eb2c28c3ad",
+  "objects": {
+    "acquisition_attempts": {
+      "kind": "table",
+      "sql_sha256": "55968b58882a247125d6f5dad889562f9f3a585766cbd046a2dbd130cbfc8d95",
+      "columns": [
+        "run_id",
+        "video_part_id",
+        "outcome",
+        "error_code",
+        "transcript_id",
+        "started_at",
+        "finished_at",
+        "credential_verified",
+        "absence_verified"
+      ],
+      "sql": "CREATE TABLE acquisition_attempts (\n    run_id TEXT NOT NULL,\n    video_part_id INTEGER NOT NULL,\n    outcome TEXT NOT NULL CHECK (\n        outcome IN ('stored', 'unchanged', 'no-subtitle', 'failed')\n    ),\n    error_code TEXT CHECK (error_code IS NULL OR length(error_code) <= 64),\n    transcript_id INTEGER,\n    started_at INTEGER NOT NULL,\n    finished_at INTEGER NOT NULL,\n    credential_verified INTEGER NOT NULL DEFAULT 0 CHECK (credential_verified IN (0, 1)),\n    absence_verified INTEGER NOT NULL DEFAULT 0 CHECK (absence_verified IN (0, 1)),\n    PRIMARY KEY (run_id, video_part_id),\n    FOREIGN KEY (run_id) REFERENCES acquisition_runs(run_id) ON DELETE RESTRICT,\n    FOREIGN KEY (video_part_id) REFERENCES video_parts(video_part_id) ON DELETE RESTRICT,\n    FOREIGN KEY (transcript_id) REFERENCES transcripts(transcript_id) ON DELETE RESTRICT,\n    CHECK (\n        (outcome = 'failed'\n            AND error_code IS NOT NULL AND transcript_id IS NULL)\n        OR (outcome = 'no-subtitle'\n            AND (error_code IS NULL OR error_code = 'not_found')\n            AND transcript_id IS NULL)\n        OR (outcome IN ('stored', 'unchanged')\n            AND error_code IS NULL AND transcript_id IS NOT NULL)\n    ),\n    CHECK (finished_at >= started_at)\n)"
+    },
+    "acquisition_runs": {
+      "kind": "table",
+      "sql_sha256": "bfa1e3e776543141041b313be4043c8af6b0411c2907c05654945db34241dd9c",
+      "columns": [
+        "run_id",
+        "kind",
+        "selector_kind",
+        "selector_target",
+        "requested_limit",
+        "credential_present",
+        "started_at",
+        "finished_at",
+        "outcome"
+      ],
+      "sql": "CREATE TABLE acquisition_runs (\n    run_id TEXT PRIMARY KEY,\n    kind TEXT NOT NULL CHECK (kind IN ('subtitle', 'audio', 'asr')),\n    selector_kind TEXT NOT NULL CHECK (selector_kind IN ('pending', 'bvid')),\n    selector_target TEXT,\n    requested_limit INTEGER CHECK (requested_limit IS NULL OR requested_limit > 0),\n    credential_present INTEGER NOT NULL CHECK (credential_present IN (0, 1)),\n    started_at INTEGER NOT NULL,\n    finished_at INTEGER,\n    outcome TEXT NOT NULL CHECK (\n        outcome IN ('running', 'complete', 'partial', 'failed')\n    ),\n    CHECK (\n        (selector_kind = 'pending' AND selector_target IS NULL)\n        OR (selector_kind = 'bvid' AND selector_target IS NOT NULL)\n    ),\n    CHECK (finished_at IS NULL OR finished_at >= started_at)\n)"
+    },
+    "asr_models": {
+      "kind": "table",
+      "sql_sha256": "dec05e6dc5b9dc4500a45b4a51906f21875568e604f2823b3823bf8177fbbff5",
+      "columns": [
+        "model_id",
+        "model_name",
+        "revision",
+        "created_at"
+      ],
+      "sql": "CREATE TABLE asr_models (\n    model_id INTEGER PRIMARY KEY,\n    model_name TEXT NOT NULL,\n    revision TEXT NOT NULL,\n    created_at INTEGER NOT NULL,\n    UNIQUE (model_name, revision)\n)"
+    },
+    "audio_objects": {
+      "kind": "table",
+      "sql_sha256": "4eb677b9bdd038a47bad3beb2797d8e17a0c93a0f4b19915170fa9a0ac530af4",
+      "columns": [
+        "audio_id",
+        "sha256",
+        "byte_size",
+        "format",
+        "duration_ms",
+        "storage_key",
+        "created_at"
+      ],
+      "sql": "CREATE TABLE audio_objects (\n    audio_id INTEGER PRIMARY KEY,\n    sha256 TEXT NOT NULL UNIQUE,\n    byte_size INTEGER NOT NULL CHECK (byte_size >= 0),\n    format TEXT NOT NULL,\n    duration_ms INTEGER NOT NULL CHECK (duration_ms >= 0),\n    storage_key TEXT NOT NULL UNIQUE,\n    created_at INTEGER NOT NULL\n)"
+    },
+    "bilibili_users": {
+      "kind": "table",
+      "sql_sha256": "c0d3dc20684cfed4a578c1c8b201c0b759b7181af3f09bb5fe9759430401ec7c",
+      "columns": [
+        "mid",
+        "display_name",
+        "created_at",
+        "updated_at"
+      ],
+      "sql": "CREATE TABLE bilibili_users (\n    mid INTEGER PRIMARY KEY,\n    display_name TEXT NOT NULL,\n    created_at INTEGER NOT NULL,\n    updated_at INTEGER NOT NULL\n)"
+    },
+    "document_artifacts": {
+      "kind": "table",
+      "sql_sha256": "13dd4efd5f30542510e9f888ca5ddc52f29c777ef58372731cacd4003ed43c7b",
+      "columns": [
+        "revision_id",
+        "template_version",
+        "artifact_name",
+        "manuscript_role",
+        "relative_path",
+        "content_sha256"
+      ],
+      "sql": "CREATE TABLE document_artifacts (\n    revision_id TEXT NOT NULL REFERENCES editorial_revisions(revision_id),\n    template_version TEXT NOT NULL CHECK (template_version = 'ai-draft-v1'),\n    artifact_name TEXT NOT NULL CHECK (artifact_name IN ('ai-draft.md', 'review.md')),\n    manuscript_role TEXT NOT NULL CHECK (manuscript_role IN ('ai-draft', 'review-reference')),\n    relative_path TEXT NOT NULL UNIQUE,\n    content_sha256 TEXT NOT NULL CHECK (\n        length(content_sha256) = 64 AND content_sha256 NOT GLOB '*[^0-9a-f]*'\n    ),\n    PRIMARY KEY (revision_id, template_version, artifact_name),\n    CHECK ((artifact_name = 'ai-draft.md' AND manuscript_role = 'ai-draft')\n        OR (artifact_name = 'review.md' AND manuscript_role = 'review-reference'))\n)"
+    },
+    "editorial_chunk_results": {
+      "kind": "table",
+      "sql_sha256": "64d7ff78e9e05469fe64e3f215f7c04c8f99cdbeadbed18f14b2cabd0e62c07d",
+      "columns": [
+        "input_id",
+        "chunk_id",
+        "call_id",
+        "blocks_json"
+      ],
+      "sql": "CREATE TABLE editorial_chunk_results (\n    input_id TEXT NOT NULL REFERENCES editorial_inputs(input_id),\n    chunk_id TEXT NOT NULL,\n    call_id TEXT NOT NULL REFERENCES editorial_model_calls(call_id),\n    blocks_json TEXT NOT NULL,\n    PRIMARY KEY (input_id, chunk_id)\n)"
+    },
+    "editorial_inputs": {
+      "kind": "table",
+      "sql_sha256": "1f55dde0122c8c7fe16236b44976492e6b8797ba1f561c2b8ac27b4c869629bb",
+      "columns": [
+        "input_id",
+        "video_part_id",
+        "base_transcript_id",
+        "reference_transcript_id",
+        "prepared_json",
+        "created_at"
+      ],
+      "sql": "CREATE TABLE editorial_inputs (\n    input_id TEXT PRIMARY KEY,\n    video_part_id INTEGER NOT NULL REFERENCES video_parts(video_part_id),\n    base_transcript_id INTEGER NOT NULL REFERENCES transcripts(transcript_id),\n    reference_transcript_id INTEGER REFERENCES transcripts(transcript_id),\n    prepared_json TEXT NOT NULL,\n    created_at INTEGER NOT NULL\n)"
+    },
+    "editorial_job_inputs": {
+      "kind": "table",
+      "sql_sha256": "de850da59cd0e55caf7272e937d80a29ea8b576ff69bcdd49f2a97562bbb42c4",
+      "columns": [
+        "job_id",
+        "input_id"
+      ],
+      "sql": "CREATE TABLE editorial_job_inputs (\n    job_id TEXT PRIMARY KEY REFERENCES workflow_jobs(job_id),\n    input_id TEXT NOT NULL REFERENCES editorial_inputs(input_id)\n)"
+    },
+    "editorial_model_calls": {
+      "kind": "table",
+      "sql_sha256": "19cc7b708d984b1969650ca732fde3c393818283c9c2f92296072cc86654b983",
+      "columns": [
+        "call_id",
+        "attempt_id",
+        "input_id",
+        "chunk_id",
+        "request_json",
+        "response_json",
+        "error_code",
+        "started_at",
+        "finished_at"
+      ],
+      "sql": "CREATE TABLE editorial_model_calls (\n    call_id TEXT PRIMARY KEY,\n    attempt_id TEXT NOT NULL REFERENCES workflow_attempts(attempt_id),\n    input_id TEXT NOT NULL REFERENCES editorial_inputs(input_id),\n    chunk_id TEXT NOT NULL,\n    request_json TEXT NOT NULL,\n    response_json TEXT,\n    error_code TEXT,\n    started_at INTEGER NOT NULL,\n    finished_at INTEGER,\n    CHECK (response_json IS NULL OR finished_at IS NOT NULL)\n)"
+    },
+    "editorial_revisions": {
+      "kind": "table",
+      "sql_sha256": "3a6e5cac448b32c06dcec1306ef88f2b176ba9d24959875679920210d7a6d797",
+      "columns": [
+        "revision_id",
+        "input_id",
+        "job_id",
+        "blocks_json",
+        "quality_status",
+        "created_at"
+      ],
+      "sql": "CREATE TABLE editorial_revisions (\n    revision_id TEXT PRIMARY KEY,\n    input_id TEXT NOT NULL UNIQUE REFERENCES editorial_inputs(input_id),\n    job_id TEXT NOT NULL REFERENCES workflow_jobs(job_id),\n    blocks_json TEXT NOT NULL,\n    quality_status TEXT NOT NULL CHECK (quality_status IN ('ai-unreviewed', 'needs-review')),\n    created_at INTEGER NOT NULL\n)"
+    },
+    "idx_publication_events_part": {
+      "kind": "index",
+      "sql_sha256": "dc5ff7ab28641fadee142fd1bf121443f7995c80834e937dc2a45f9c68634c4e",
+      "sql": "CREATE INDEX idx_publication_events_part\n    ON publication_events(video_part_id, event_id)"
+    },
+    "immutable_publication_editions_delete": {
+      "kind": "trigger",
+      "sql_sha256": "16b5594346ca5dd798c7ac796e4cb85e7d9ba5ee11900fa3e83b363c941188f2",
+      "sql": "CREATE TRIGGER immutable_publication_editions_delete\nBEFORE DELETE ON publication_editions BEGIN\n    SELECT RAISE(ABORT, 'publication editions are immutable');\nEND"
+    },
+    "immutable_publication_editions_update": {
+      "kind": "trigger",
+      "sql_sha256": "d139b8dca9ec2f7a421e10733ad5f2d2af4a424fca4cfb6bb2c38529935ea377",
+      "sql": "CREATE TRIGGER immutable_publication_editions_update\nBEFORE UPDATE ON publication_editions BEGIN\n    SELECT RAISE(ABORT, 'publication editions are immutable');\nEND"
+    },
+    "immutable_publication_events_delete": {
+      "kind": "trigger",
+      "sql_sha256": "526f1427eb6a3d85cdce12dd2292bc9b032bfce65123d46ea2a5bc7adb5ab480",
+      "sql": "CREATE TRIGGER immutable_publication_events_delete\nBEFORE DELETE ON publication_events BEGIN\n    SELECT RAISE(ABORT, 'publication events are append-only');\nEND"
+    },
+    "immutable_publication_events_update": {
+      "kind": "trigger",
+      "sql_sha256": "8c3d31ab75156687ab693895ea5dcbc339cd084c9ba992a9e07a7d6aaa7de2d4",
+      "sql": "CREATE TRIGGER immutable_publication_events_update\nBEFORE UPDATE ON publication_events BEGIN\n    SELECT RAISE(ABORT, 'publication events are append-only');\nEND"
+    },
+    "immutable_publication_releases": {
+      "kind": "trigger",
+      "sql_sha256": "63dae3513b6ab74386f4648318233b42ddf800e9ec7b37176e7412d1c248080e",
+      "sql": "CREATE TRIGGER immutable_publication_releases\nBEFORE UPDATE ON publication_releases\nWHEN NEW.release_id IS NOT OLD.release_id\n    OR NEW.video_part_id IS NOT OLD.video_part_id\n    OR NEW.edition_id IS NOT OLD.edition_id\n    OR NEW.review_id IS NOT OLD.review_id\n    OR NEW.content_sha256 IS NOT OLD.content_sha256\n    OR NEW.template_version IS NOT OLD.template_version\n    OR NEW.relative_path IS NOT OLD.relative_path\n    OR NEW.artifact_sha256 IS NOT OLD.artifact_sha256\n    OR NEW.published_at IS NOT OLD.published_at\n    OR NEW.published_by IS NOT OLD.published_by\n    OR NOT ((OLD.status = 'published' AND NEW.status IN ('superseded', 'withdrawn'))\n        OR (OLD.status = 'superseded' AND NEW.status = 'withdrawn')) BEGIN\n    SELECT RAISE(ABORT, 'publication release identity or terminal state is immutable');\nEND"
+    },
+    "immutable_publication_releases_delete": {
+      "kind": "trigger",
+      "sql_sha256": "df50bc274f4abbc03947452689b60f8245a4f4fd85e358a8a0d290718e72c201",
+      "sql": "CREATE TRIGGER immutable_publication_releases_delete\nBEFORE DELETE ON publication_releases BEGIN\n    SELECT RAISE(ABORT, 'publication releases are immutable');\nEND"
+    },
+    "immutable_publication_review_identity": {
+      "kind": "trigger",
+      "sql_sha256": "8ba01c4afa5b537a05f579d7f273f7ad3cf61c19641157373d00525bc824fa76",
+      "sql": "CREATE TRIGGER immutable_publication_review_identity\nBEFORE UPDATE ON publication_edition_reviews\nWHEN NEW.edition_id IS NOT OLD.edition_id OR NEW.review_id IS NOT OLD.review_id\n    OR NEW.content_sha256 IS NOT OLD.content_sha256 BEGIN\n    SELECT RAISE(ABORT, 'publication review identity is immutable');\nEND"
+    },
+    "immutable_publication_reviews_delete": {
+      "kind": "trigger",
+      "sql_sha256": "ee39bd07648bd20196ff9ad1caeba1618466cbea6ba25e22694cf5dc420bc92d",
+      "sql": "CREATE TRIGGER immutable_publication_reviews_delete\nBEFORE DELETE ON publication_edition_reviews BEGIN\n    SELECT RAISE(ABORT, 'publication reviews are immutable');\nEND"
+    },
+    "ingestion_cursors": {
+      "kind": "table",
+      "sql_sha256": "0aa3673f487e69f08319c56e6dd425508f2008da8fc124178377f749e067ea24",
+      "columns": [
+        "mid",
+        "next_page",
+        "observed_total",
+        "state",
+        "last_error_code",
+        "updated_at"
+      ],
+      "sql": "CREATE TABLE ingestion_cursors (\n    mid INTEGER PRIMARY KEY,\n    next_page INTEGER NOT NULL CHECK (next_page >= 1),\n    observed_total INTEGER CHECK (observed_total IS NULL OR observed_total >= 0),\n    state TEXT NOT NULL CHECK (\n        state IN ('ready', 'complete', 'limited', 'risk_interrupted')\n    ),\n    last_error_code TEXT CHECK (last_error_code IS NULL OR length(last_error_code) <= 64),\n    updated_at INTEGER NOT NULL,\n    FOREIGN KEY (mid) REFERENCES bilibili_users(mid) ON DELETE RESTRICT\n)"
+    },
+    "ingestion_discoveries": {
+      "kind": "table",
+      "sql_sha256": "b62143eccb6af8f6c09d6d9da2378adc050137a859aa9421ecd45a03e5c851fd",
+      "columns": [
+        "run_id",
+        "page_number",
+        "bvid",
+        "source_position",
+        "discovered_at"
+      ],
+      "sql": "CREATE TABLE ingestion_discoveries (\n    run_id TEXT NOT NULL,\n    page_number INTEGER NOT NULL CHECK (page_number >= 1),\n    bvid TEXT NOT NULL,\n    source_position INTEGER CHECK (source_position IS NULL OR source_position >= 0),\n    discovered_at INTEGER NOT NULL,\n    PRIMARY KEY (run_id, page_number, bvid),\n    FOREIGN KEY (run_id) REFERENCES ingestion_runs(run_id) ON DELETE RESTRICT,\n    FOREIGN KEY (bvid) REFERENCES videos(bvid) ON DELETE RESTRICT\n)"
+    },
+    "ingestion_pages": {
+      "kind": "table",
+      "sql_sha256": "8e08bdd667ce1e4dbb980bf42ef5ad10230ef6f0a7aff1259a9cf67592876f07",
+      "columns": [
+        "run_id",
+        "page_number",
+        "outcome",
+        "error_code",
+        "started_at",
+        "finished_at"
+      ],
+      "sql": "CREATE TABLE ingestion_pages (\n    run_id TEXT NOT NULL,\n    page_number INTEGER NOT NULL CHECK (page_number >= 1),\n    outcome TEXT NOT NULL CHECK (\n        outcome IN ('ok', 'empty', 'risk_interrupted', 'failed')\n    ),\n    error_code TEXT CHECK (error_code IS NULL OR length(error_code) <= 64),\n    started_at INTEGER NOT NULL,\n    finished_at INTEGER NOT NULL,\n    PRIMARY KEY (run_id, page_number),\n    FOREIGN KEY (run_id) REFERENCES ingestion_runs(run_id) ON DELETE RESTRICT\n)"
+    },
+    "ingestion_runs": {
+      "kind": "table",
+      "sql_sha256": "069e68009ed78bf5a533582a4cd725cb3d63551db5ebabd5527b77340c70404e",
+      "columns": [
+        "run_id",
+        "mid",
+        "source_package",
+        "source_version",
+        "requested_start_page",
+        "requested_page_limit",
+        "started_at",
+        "finished_at",
+        "outcome"
+      ],
+      "sql": "CREATE TABLE ingestion_runs (\n    run_id TEXT PRIMARY KEY,\n    mid INTEGER NOT NULL,\n    source_package TEXT NOT NULL CHECK (source_package = 'bilibili-api-python'),\n    source_version TEXT NOT NULL,\n    requested_start_page INTEGER NOT NULL CHECK (requested_start_page >= 1),\n    requested_page_limit INTEGER CHECK (\n        requested_page_limit IS NULL OR requested_page_limit > 0\n    ),\n    started_at INTEGER NOT NULL,\n    finished_at INTEGER,\n    outcome TEXT NOT NULL CHECK (\n        outcome IN ('running', 'complete', 'limited', 'risk_interrupted', 'failed')\n    ),\n    FOREIGN KEY (mid) REFERENCES bilibili_users(mid) ON DELETE RESTRICT\n)"
+    },
+    "ix_acquisition_attempts_part_time": {
+      "kind": "index",
+      "sql_sha256": "05ebbfbd2648bfb6a99d0944ef093d6948c636e89f5252dd8b5ef4f2fa0f63f9",
+      "sql": "CREATE INDEX ix_acquisition_attempts_part_time\n    ON acquisition_attempts(video_part_id, finished_at)"
+    },
+    "ix_acquisition_runs_kind_run": {
+      "kind": "index",
+      "sql_sha256": "b827e5dc2b60af8c14535922ffa0a9402c63ee799cfe0bec8244001514dbd60c",
+      "sql": "CREATE INDEX ix_acquisition_runs_kind_run\n    ON acquisition_runs(kind, run_id)"
+    },
+    "ix_transcript_coverage_part_run": {
+      "kind": "index",
+      "sql_sha256": "5888b9804db60a8132f038ecd4a5ff35759dce2994073fafd88b6028d118d53b",
+      "sql": "CREATE INDEX ix_transcript_coverage_part_run\n    ON transcript_coverage_attestations(video_part_id, run_id)"
+    },
+    "ix_videos_pubdate_bvid": {
+      "kind": "index",
+      "sql_sha256": "8ece1e262d6ecb1d38deb2fae4427efeb73ce3893ff9ced30dc5a3e85c51319f",
+      "sql": "CREATE INDEX ix_videos_pubdate_bvid\n    ON videos(pubdate DESC, bvid ASC)"
+    },
+    "ix_workflow_attempts_job": {
+      "kind": "index",
+      "sql_sha256": "a7760ed339601a2fbb14d61dfc06670a01a84548b52f65a33fe333d5a4c6df83",
+      "sql": "CREATE INDEX ix_workflow_attempts_job\n    ON workflow_attempts(job_id, started_at DESC)"
+    },
+    "ix_workflow_jobs_claim": {
+      "kind": "index",
+      "sql_sha256": "970763798479bafe85b39d454b2e8c8b25ea5a2c6a24d34eafe5a5074b7dea51",
+      "sql": "CREATE INDEX ix_workflow_jobs_claim\n    ON workflow_jobs(status, available_at, priority DESC, created_at, job_id)"
+    },
+    "ix_workflow_jobs_part": {
+      "kind": "index",
+      "sql_sha256": "014d9931f36d0a40982a995973cf115f09746783374a9384b2c1d330de111ce9",
+      "sql": "CREATE INDEX ix_workflow_jobs_part\n    ON workflow_jobs(video_part_id, kind, status)"
+    },
+    "ix_workflow_quality_part": {
+      "kind": "index",
+      "sql_sha256": "6ad4e994efcbd5294c63797b70c353df8dd948a698f69d43623533a81dffa8fc",
+      "sql": "CREATE INDEX ix_workflow_quality_part\n    ON workflow_quality_assessments(video_part_id, assessed_at DESC)"
+    },
+    "manuscript_contract": {
+      "kind": "table",
+      "sql_sha256": "dfcbd480e0c837c8d1acf5af7b7f0fcb51638f8164e5b060f3e54c75fdb4b718",
+      "columns": [
+        "version"
+      ],
+      "sql": "CREATE TABLE manuscript_contract (\n    version INTEGER PRIMARY KEY CHECK (version = 1)\n)"
+    },
+    "part_audio_objects": {
+      "kind": "table",
+      "sql_sha256": "804415bf156bcbd8b44ce2c4ab82e83befde169b66084c5f2f9575149361fda3",
+      "columns": [
+        "video_part_id",
+        "audio_id",
+        "acquired_at",
+        "acquisition_source"
+      ],
+      "sql": "CREATE TABLE part_audio_objects (\n    video_part_id INTEGER NOT NULL,\n    audio_id INTEGER NOT NULL,\n    acquired_at INTEGER NOT NULL,\n    acquisition_source TEXT NOT NULL,\n    PRIMARY KEY (video_part_id, audio_id),\n    FOREIGN KEY (video_part_id) REFERENCES video_parts(video_part_id) ON DELETE RESTRICT,\n    FOREIGN KEY (audio_id) REFERENCES audio_objects(audio_id) ON DELETE RESTRICT\n)"
+    },
+    "publication_edition_reviews": {
+      "kind": "table",
+      "sql_sha256": "cca1407c90a425c3bdb0197bcbe2fb4a0a8e18d59dc090c498a5ad7148e78e04",
+      "columns": [
+        "edition_id",
+        "review_id",
+        "content_sha256",
+        "status",
+        "actor",
+        "note",
+        "issue_url",
+        "updated_at"
+      ],
+      "sql": "CREATE TABLE publication_edition_reviews (\n    edition_id TEXT PRIMARY KEY REFERENCES publication_editions(edition_id),\n    review_id TEXT NOT NULL UNIQUE,\n    content_sha256 TEXT NOT NULL CHECK (\n        length(content_sha256) = 64 AND content_sha256 NOT GLOB '*[^0-9a-f]*'\n    ),\n    status TEXT NOT NULL CHECK (status IN (\n        'pending-review', 'in-review', 'changes-requested',\n        'approved', 'rejected'\n    )),\n    actor TEXT NOT NULL CHECK (length(trim(actor)) > 0),\n    note TEXT NOT NULL DEFAULT '',\n    issue_url TEXT,\n    updated_at INTEGER NOT NULL\n)"
+    },
+    "publication_editions": {
+      "kind": "table",
+      "sql_sha256": "dff0097c3de133ae0eebf6cf7f31bfaeaf60e75a201b795a2386af23e15628c5",
+      "columns": [
+        "edition_id",
+        "video_part_id",
+        "revision_id",
+        "parent_edition_id",
+        "content_json",
+        "content_sha256",
+        "created_at",
+        "created_by",
+        "note"
+      ],
+      "sql": "CREATE TABLE publication_editions (\n    edition_id TEXT PRIMARY KEY,\n    video_part_id INTEGER NOT NULL REFERENCES video_parts(video_part_id),\n    revision_id TEXT NOT NULL REFERENCES editorial_revisions(revision_id),\n    parent_edition_id TEXT REFERENCES publication_editions(edition_id),\n    content_json TEXT NOT NULL CHECK (json_valid(content_json)),\n    content_sha256 TEXT NOT NULL CHECK (\n        length(content_sha256) = 64 AND content_sha256 NOT GLOB '*[^0-9a-f]*'\n    ),\n    created_at INTEGER NOT NULL,\n    created_by TEXT NOT NULL CHECK (length(trim(created_by)) > 0),\n    note TEXT NOT NULL DEFAULT ''\n)"
+    },
+    "publication_events": {
+      "kind": "table",
+      "sql_sha256": "14a240e4d2502e35ce9dcc3448a69f9294658b28bbf26467fc6c3594fa3d5bcf",
+      "columns": [
+        "event_id",
+        "video_part_id",
+        "edition_id",
+        "release_id",
+        "review_id",
+        "content_sha256",
+        "event_type",
+        "from_status",
+        "to_status",
+        "actor",
+        "issue_url",
+        "note",
+        "changed_at"
+      ],
+      "sql": "CREATE TABLE publication_events (\n    event_id INTEGER PRIMARY KEY,\n    video_part_id INTEGER NOT NULL REFERENCES video_parts(video_part_id),\n    edition_id TEXT NOT NULL REFERENCES publication_editions(edition_id),\n    release_id TEXT REFERENCES publication_releases(release_id),\n    review_id TEXT REFERENCES publication_edition_reviews(review_id),\n    content_sha256 TEXT NOT NULL,\n    event_type TEXT NOT NULL CHECK (event_type IN (\n        'created', 'edited', 'in-review', 'changes-requested',\n        'approved', 'rejected', 'published', 'superseded', 'withdrawn'\n    )),\n    from_status TEXT,\n    to_status TEXT NOT NULL,\n    actor TEXT NOT NULL CHECK (length(trim(actor)) > 0),\n    issue_url TEXT,\n    note TEXT NOT NULL DEFAULT '',\n    changed_at INTEGER NOT NULL\n)"
+    },
+    "publication_heads": {
+      "kind": "table",
+      "sql_sha256": "339bddfa9d516e8b98d6fa57da06a64fd83639b4fa9704a343dd1121822aba00",
+      "columns": [
+        "video_part_id",
+        "current_edition_id",
+        "current_release_id"
+      ],
+      "sql": "CREATE TABLE publication_heads (\n    video_part_id INTEGER PRIMARY KEY REFERENCES video_parts(video_part_id),\n    current_edition_id TEXT NOT NULL REFERENCES publication_editions(edition_id),\n    current_release_id TEXT REFERENCES publication_releases(release_id)\n)"
+    },
+    "publication_releases": {
+      "kind": "table",
+      "sql_sha256": "34b9dffcb801008fdd0365ab4a33a2eb420dc4d4f3c2376006f6bf2dce4a70bf",
+      "columns": [
+        "release_id",
+        "video_part_id",
+        "edition_id",
+        "review_id",
+        "content_sha256",
+        "template_version",
+        "relative_path",
+        "artifact_sha256",
+        "published_at",
+        "published_by",
+        "status"
+      ],
+      "sql": "CREATE TABLE publication_releases (\n    release_id TEXT PRIMARY KEY,\n    video_part_id INTEGER NOT NULL REFERENCES video_parts(video_part_id),\n    edition_id TEXT NOT NULL UNIQUE REFERENCES publication_editions(edition_id),\n    review_id TEXT NOT NULL REFERENCES publication_edition_reviews(review_id),\n    content_sha256 TEXT NOT NULL CHECK (\n        length(content_sha256) = 64 AND content_sha256 NOT GLOB '*[^0-9a-f]*'\n    ),\n    template_version TEXT NOT NULL CHECK (template_version = 'publish-v1'),\n    relative_path TEXT NOT NULL UNIQUE,\n    artifact_sha256 TEXT NOT NULL CHECK (\n        length(artifact_sha256) = 64 AND artifact_sha256 NOT GLOB '*[^0-9a-f]*'\n    ),\n    published_at INTEGER NOT NULL,\n    published_by TEXT NOT NULL CHECK (length(trim(published_by)) > 0),\n    status TEXT NOT NULL CHECK (status IN ('published', 'superseded', 'withdrawn'))\n)"
+    },
+    "terminal_publication_reviews": {
+      "kind": "trigger",
+      "sql_sha256": "199de9d4d200bd9cd1824f2c4c8d6261e515b0b1b3ae4e680ab56be21858c784",
+      "sql": "CREATE TRIGGER terminal_publication_reviews\nBEFORE UPDATE ON publication_edition_reviews\nWHEN OLD.status IN ('approved', 'rejected') BEGIN\n    SELECT RAISE(ABORT, 'terminal publication review is immutable');\nEND"
+    },
+    "transcript_asr_evidence": {
+      "kind": "table",
+      "sql_sha256": "7d12e5014e7de142ac485d9f7354f81b139c93d39ce2571a159c4e05eefd4f55",
+      "columns": [
+        "run_id",
+        "video_part_id",
+        "transcript_id",
+        "schema_version",
+        "evidence_json"
+      ],
+      "sql": "CREATE TABLE transcript_asr_evidence (\n    run_id TEXT NOT NULL,\n    video_part_id INTEGER NOT NULL,\n    transcript_id INTEGER NOT NULL,\n    schema_version INTEGER NOT NULL CHECK (schema_version = 1),\n    evidence_json TEXT NOT NULL CHECK (json_valid(evidence_json)),\n    PRIMARY KEY (run_id, video_part_id),\n    FOREIGN KEY (run_id, video_part_id)\n        REFERENCES acquisition_attempts(run_id, video_part_id) ON DELETE RESTRICT,\n    FOREIGN KEY (transcript_id) REFERENCES transcripts(transcript_id) ON DELETE RESTRICT\n)"
+    },
+    "transcript_coverage_attestations": {
+      "kind": "table",
+      "sql_sha256": "db98ddda0c6e623c63a4c27b8367bf64846532513547a8bc7d4d4f24c9148ea4",
+      "columns": [
+        "run_id",
+        "video_part_id",
+        "transcript_id",
+        "decoded_s",
+        "produced_s",
+        "coverage",
+        "coverage_min",
+        "coverage_short"
+      ],
+      "sql": "CREATE TABLE transcript_coverage_attestations (\n    run_id TEXT NOT NULL,\n    video_part_id INTEGER NOT NULL,\n    transcript_id INTEGER NOT NULL,\n    decoded_s REAL NOT NULL CHECK (decoded_s > 0),\n    produced_s REAL NOT NULL CHECK (produced_s >= 0 AND produced_s <= decoded_s),\n    coverage REAL NOT NULL CHECK (coverage >= 0 AND coverage <= 1),\n    coverage_min REAL NOT NULL CHECK (coverage_min > 0 AND coverage_min <= 1),\n    coverage_short INTEGER NOT NULL CHECK (coverage_short IN (0, 1)),\n    PRIMARY KEY (run_id, video_part_id),\n    FOREIGN KEY (run_id, video_part_id)\n        REFERENCES acquisition_attempts(run_id, video_part_id) ON DELETE RESTRICT,\n    FOREIGN KEY (transcript_id)\n        REFERENCES transcripts(transcript_id) ON DELETE RESTRICT\n)"
+    },
+    "transcript_segments": {
+      "kind": "table",
+      "sql_sha256": "11c5b456e8a94e5f01693735df43c299489499d2c27c0a85bc27164311c6b209",
+      "columns": [
+        "transcript_id",
+        "ordinal",
+        "start_ms",
+        "end_ms",
+        "text"
+      ],
+      "sql": "CREATE TABLE transcript_segments (\n    transcript_id INTEGER NOT NULL,\n    ordinal INTEGER NOT NULL CHECK (ordinal >= 0),\n    start_ms INTEGER NOT NULL CHECK (start_ms >= 0),\n    end_ms INTEGER NOT NULL CHECK (end_ms > start_ms),\n    text TEXT NOT NULL,\n    PRIMARY KEY (transcript_id, ordinal),\n    FOREIGN KEY (transcript_id) REFERENCES transcripts(transcript_id) ON DELETE RESTRICT\n)"
+    },
+    "transcripts": {
+      "kind": "table",
+      "sql_sha256": "b34ddf04620bd3c74aba1513a98d93729df2fd71dea34b2b663c03344210c978",
+      "columns": [
+        "transcript_id",
+        "video_part_id",
+        "source_kind",
+        "language",
+        "model_id",
+        "version",
+        "content_sha256",
+        "created_at"
+      ],
+      "sql": "CREATE TABLE transcripts (\n    transcript_id INTEGER PRIMARY KEY,\n    video_part_id INTEGER NOT NULL,\n    source_kind TEXT NOT NULL CHECK (\n        source_kind IN ('subtitle-ai', 'subtitle-cc', 'asr-local')\n    ),\n    language TEXT NOT NULL CHECK (length(trim(language)) > 0),\n    model_id INTEGER,\n    version INTEGER NOT NULL CHECK (version > 0),\n    content_sha256 TEXT NOT NULL CHECK (\n        length(content_sha256) = 64 AND content_sha256 = lower(content_sha256)\n    ),\n    created_at INTEGER NOT NULL,\n    UNIQUE (video_part_id, source_kind, language, version),\n    FOREIGN KEY (video_part_id) REFERENCES video_parts(video_part_id) ON DELETE RESTRICT,\n    FOREIGN KEY (model_id) REFERENCES asr_models(model_id) ON DELETE RESTRICT\n)"
+    },
+    "ux_transcripts_subtitle_content": {
+      "kind": "index",
+      "sql_sha256": "20075ada9b9608137f3fc8da0ac423784009b174543c59140713efe8e76daf6c",
+      "sql": "CREATE UNIQUE INDEX ux_transcripts_subtitle_content\n    ON transcripts(video_part_id, source_kind, language, content_sha256)\n    WHERE source_kind IN ('subtitle-ai', 'subtitle-cc')"
+    },
+    "ux_workflow_asr_profiles_config": {
+      "kind": "index",
+      "sql_sha256": "9ca3299e71cbd68819066d7126c3d36c6a7d87e62411c824a0bb95c28f3334a6",
+      "sql": "CREATE UNIQUE INDEX ux_workflow_asr_profiles_config\n    ON workflow_asr_profiles(profile_key, config_sha256)"
+    },
+    "v_ingestion_run_stats": {
+      "kind": "view",
+      "sql_sha256": "40da869637f4ed1d5756b82701e4361c95cba67b9abbb1f3c5920069ec9b71f0",
+      "sql": "CREATE VIEW v_ingestion_run_stats AS\nSELECT\n    ir.run_id,\n    ir.mid,\n    ir.started_at,\n    ir.finished_at,\n    ir.outcome,\n    COUNT(DISTINCT ip.page_number) AS page_count,\n    COUNT(DISTINCT id.bvid) AS video_count\nFROM ingestion_runs AS ir\nLEFT JOIN ingestion_pages AS ip ON ir.run_id = ip.run_id\nLEFT JOIN ingestion_discoveries AS id ON ir.run_id = id.run_id\nGROUP BY ir.run_id"
+    },
+    "v_missing_audio": {
+      "kind": "view",
+      "sql_sha256": "76c6c405cbce02fb013e469b46dab207cd68433fa4b139ef6a90d161978f4e4d",
+      "sql": "CREATE VIEW v_missing_audio AS\nWITH eligible_parts AS (\n    SELECT vp.*\n    FROM video_parts AS vp\n    WHERE vp.processing_status <> 'gone'\n      AND NOT EXISTS (\n          SELECT 1 FROM transcripts AS t WHERE t.video_part_id = vp.video_part_id\n      )\n      AND NOT EXISTS (\n          SELECT 1 FROM part_audio_objects AS pao WHERE pao.video_part_id = vp.video_part_id\n      )\n)\n, subtitle_attempts AS (\n    SELECT\n        aa.video_part_id,\n        aa.outcome,\n        aa.error_code,\n        aa.run_id,\n        ar.credential_present,\n        aa.credential_verified,\n        aa.absence_verified,\n        ROW_NUMBER() OVER (\n            PARTITION BY aa.video_part_id\n            ORDER BY aa.finished_at DESC, ar.started_at DESC, ar.rowid DESC\n        ) AS recency\n    -- Retain every observation for an eligible part: both latest-attempt\n    -- ordering and distinct authenticated confirmations need that history.\n    -- Excluded parts cannot enter this queue, so do not window their history.\n    FROM eligible_parts AS eligible\n    CROSS JOIN acquisition_attempts AS aa\n    CROSS JOIN acquisition_runs AS ar\n    WHERE aa.video_part_id = eligible.video_part_id\n      AND ar.run_id = aa.run_id\n      AND ar.kind = 'subtitle'\n)\n, empty_inventory_confirmations AS (\n    SELECT video_part_id, COUNT(DISTINCT run_id) AS confirmations\n    FROM subtitle_attempts\n    WHERE outcome = 'no-subtitle' AND error_code IS NULL\n      AND credential_present = 1 AND credential_verified = 1\n    GROUP BY video_part_id\n)\nSELECT\n    vp.video_part_id,\n    vp.bvid || ':p' || vp.page_index AS work_id,\n    vp.bvid,\n    vp.page_index,\n    vp.cid,\n    vp.title AS part_title,\n    vp.duration_ms,\n    v.title AS video_title,\n    v.pubdate,\n    latest.outcome AS newest_outcome,\n    latest.error_code AS newest_error_code\nFROM eligible_parts AS vp\nJOIN videos AS v ON vp.bvid = v.bvid\nJOIN subtitle_attempts AS latest\n    ON latest.video_part_id = vp.video_part_id AND latest.recency = 1\nLEFT JOIN empty_inventory_confirmations AS eic\n    ON eic.video_part_id = vp.video_part_id\nWHERE latest.outcome = 'no-subtitle'\n  AND ((latest.error_code = 'not_found' AND latest.absence_verified = 1)\n       OR (latest.error_code IS NULL\n           AND latest.credential_present = 1 AND latest.credential_verified = 1\n           AND COALESCE(eic.confirmations, 0) >= 2))"
+    },
+    "v_missing_subtitle": {
+      "kind": "view",
+      "sql_sha256": "feac7c03496599f17ba4c7ef3a33721456d6f32cd5de3c18f15704a94074c88b",
+      "sql": "CREATE VIEW v_missing_subtitle AS\nSELECT\n    vp.video_part_id,\n    vp.bvid || ':p' || vp.page_index AS work_id,\n    vp.bvid,\n    vp.page_index,\n    vp.cid,\n    vp.title AS part_title,\n    vp.duration_ms,\n    v.title AS video_title,\n    v.pubdate\nFROM video_parts AS vp\nJOIN videos AS v ON vp.bvid = v.bvid\nWHERE vp.processing_status <> 'gone'\n  AND NOT EXISTS (\n      SELECT 1 FROM transcripts AS t WHERE t.video_part_id = vp.video_part_id\n  )"
+    },
+    "v_missing_transcript": {
+      "kind": "view",
+      "sql_sha256": "6a058f2d32a201ceb201d6ceeeda48dc990b82b2c3d394b7346d4ff3b59894c9",
+      "sql": "CREATE VIEW v_missing_transcript AS\nSELECT\n    vp.video_part_id,\n    vp.bvid || ':p' || vp.page_index AS work_id,\n    vp.bvid,\n    vp.page_index,\n    vp.cid,\n    vp.title AS part_title,\n    vp.duration_ms,\n    v.title AS video_title,\n    v.pubdate\nFROM video_parts AS vp\nJOIN videos AS v ON vp.bvid = v.bvid\nWHERE NOT EXISTS (\n      SELECT 1 FROM transcripts AS t WHERE t.video_part_id = vp.video_part_id\n  )\n  AND EXISTS (\n      SELECT 1 FROM part_audio_objects AS pao WHERE pao.video_part_id = vp.video_part_id\n  )"
+    },
+    "v_part_pipeline": {
+      "kind": "view",
+      "sql_sha256": "d3aa0ba3efcef0b916ca4b03a93c697a1248ee00f71990030615d611c9545828",
+      "sql": "CREATE VIEW v_part_pipeline AS\nWITH subtitle_attempts AS (\n    SELECT\n        aa.video_part_id,\n        aa.outcome,\n        aa.error_code,\n        aa.run_id,\n        ar.credential_present,\n        aa.credential_verified,\n        aa.absence_verified,\n        ROW_NUMBER() OVER (\n            PARTITION BY aa.video_part_id\n            ORDER BY aa.finished_at DESC, ar.started_at DESC, ar.rowid DESC\n        ) AS recency\n    FROM acquisition_attempts AS aa\n    JOIN acquisition_runs AS ar ON ar.run_id = aa.run_id\n    WHERE ar.kind = 'subtitle'\n)\n-- The same corroboration rule ``v_missing_audio`` applies, so the two views\n-- never disagree about one row: an empty inventory with no error code is an\n-- indefinite negative and needs two independent credentialed observations\n-- (distinct runs with ``credential_present = 1`` and verified authentication\n-- recorded on the individual attempt).\n, empty_inventory_confirmations AS (\n    SELECT video_part_id, COUNT(DISTINCT run_id) AS confirmations\n    FROM subtitle_attempts\n    WHERE outcome = 'no-subtitle' AND error_code IS NULL\n      AND credential_present = 1 AND credential_verified = 1\n    GROUP BY video_part_id\n)\nSELECT\n    vp.video_part_id,\n    vp.bvid || ':p' || vp.page_index AS work_id,\n    vp.bvid,\n    vp.page_index,\n    vp.processing_status,\n    CASE\n        WHEN EXISTS (\n            SELECT 1 FROM transcripts AS t WHERE t.video_part_id = vp.video_part_id\n        ) THEN 'transcribed'\n        WHEN EXISTS (\n            SELECT 1 FROM part_audio_objects AS pao WHERE pao.video_part_id = vp.video_part_id\n        ) THEN 'audio_ok'\n        WHEN vp.processing_status <> 'gone'\n             AND latest.outcome = 'no-subtitle'\n             AND ((latest.error_code = 'not_found' AND latest.absence_verified = 1)\n                  OR (latest.error_code IS NULL\n                      AND latest.credential_present = 1 AND latest.credential_verified = 1\n                      AND COALESCE(eic.confirmations, 0) >= 2)) THEN 'audio_pending'\n        WHEN latest.outcome = 'no-subtitle' THEN 'no_subtitle'\n        ELSE 'discovered'\n    END AS pipeline_state\nFROM video_parts AS vp\nLEFT JOIN subtitle_attempts AS latest\n    ON latest.video_part_id = vp.video_part_id AND latest.recency = 1\nLEFT JOIN empty_inventory_confirmations AS eic\n    ON eic.video_part_id = vp.video_part_id"
+    },
+    "v_pending_metadata": {
+      "kind": "view",
+      "sql_sha256": "8335e8f2f325c03a0ff5394cc1e017c3ec05e5c491a37d0b16beaa08c3a9f23a",
+      "sql": "CREATE VIEW v_pending_metadata AS\nSELECT\n    vp.video_part_id,\n    vp.bvid || ':p' || vp.page_index AS work_id,\n    vp.bvid,\n    vp.page_index,\n    vp.processing_status\nFROM video_parts AS vp\nWHERE vp.processing_status = 'discovered'"
+    },
+    "v_pending_subtitles": {
+      "kind": "view",
+      "sql_sha256": "918819049ab962339e206a70f5be433e14344ce99e3fd7411c72e9c47545ee09",
+      "sql": "CREATE VIEW v_pending_subtitles AS\nWITH eligible_parts AS (\n    SELECT vp.*\n    FROM video_parts AS vp\n    WHERE vp.processing_status <> 'gone'\n      AND NOT EXISTS (\n          SELECT 1 FROM transcripts AS t WHERE t.video_part_id = vp.video_part_id\n      )\n)\n, subtitle_attempts AS (\n    SELECT\n        aa.video_part_id,\n        aa.finished_at,\n        aa.outcome,\n        aa.error_code,\n        ar.credential_present,\n        ROW_NUMBER() OVER (\n            PARTITION BY aa.video_part_id\n            ORDER BY aa.finished_at DESC, ar.started_at DESC, ar.rowid DESC\n        ) AS recency\n    -- Drive indexed history lookups from eligible parts. Ordinary joins can\n    -- start with every subtitle run instead, scanning archived history even\n    -- though those parts cannot enter this queue. CROSS JOIN fixes that order.\n    FROM eligible_parts AS eligible\n    CROSS JOIN acquisition_attempts AS aa\n    CROSS JOIN acquisition_runs AS ar\n    WHERE aa.video_part_id = eligible.video_part_id\n      AND ar.run_id = aa.run_id\n      AND ar.kind = 'subtitle'\n)\nSELECT\n    vp.video_part_id,\n    vp.bvid || ':p' || vp.page_index AS work_id,\n    vp.bvid,\n    vp.page_index,\n    vp.cid,\n    vp.title AS part_title,\n    vp.duration_ms,\n    CASE WHEN latest.video_part_id IS NULL THEN 0 ELSE 1 END AS attempted,\n    latest.finished_at AS last_attempt_at,\n    latest.outcome AS last_attempt_outcome,\n    latest.error_code AS last_attempt_error_code,\n    latest.credential_present AS last_attempt_credential_present\nFROM eligible_parts AS vp\nLEFT JOIN subtitle_attempts AS latest\n    ON latest.video_part_id = vp.video_part_id AND latest.recency = 1"
+    },
+    "v_video_parts": {
+      "kind": "view",
+      "sql_sha256": "f895bfd17ee8a305a187a2c0ed5ddca2027f334642d275aee2670e258f805a30",
+      "sql": "CREATE VIEW v_video_parts AS\nSELECT\n    vp.video_part_id,\n    vp.bvid || ':p' || vp.page_index AS work_id,\n    u.display_name AS user_name,\n    v.title AS video_title,\n    vp.page_index,\n    vp.cid,\n    vp.title AS part_title,\n    vp.duration_ms,\n    vp.processing_status,\n    vp.created_at,\n    vp.updated_at\nFROM video_parts AS vp\nJOIN videos AS v ON vp.bvid = v.bvid\nJOIN bilibili_users AS u ON v.mid = u.mid"
+    },
+    "video_details": {
+      "kind": "table",
+      "sql_sha256": "35e2f18a4ec6a4dfd8993860c7df86de5c11fe69c7b3e943dd45cfbdcd2e0787",
+      "columns": [
+        "bvid",
+        "pic",
+        "desc",
+        "tid",
+        "observed_at"
+      ],
+      "sql": "CREATE TABLE video_details (\n    bvid TEXT PRIMARY KEY,\n    pic TEXT,\n    \"desc\" TEXT,\n    tid INTEGER CHECK (tid IS NULL OR tid > 0),\n    observed_at INTEGER NOT NULL,\n    FOREIGN KEY (bvid) REFERENCES videos(bvid) ON DELETE RESTRICT\n)"
+    },
+    "video_parts": {
+      "kind": "table",
+      "sql_sha256": "ab92de1f560c784c0fa32b5d8a793e43eaf1fabe5883dc497842cccec6870ec6",
+      "columns": [
+        "video_part_id",
+        "bvid",
+        "page_index",
+        "cid",
+        "title",
+        "duration_ms",
+        "processing_status",
+        "created_at",
+        "updated_at"
+      ],
+      "sql": "CREATE TABLE video_parts (\n    video_part_id INTEGER PRIMARY KEY,\n    bvid TEXT NOT NULL,\n    page_index INTEGER NOT NULL CHECK (page_index >= 0),\n    cid INTEGER NOT NULL CHECK (cid > 0),\n    title TEXT NOT NULL,\n    duration_ms INTEGER NOT NULL CHECK (duration_ms > 0),\n    processing_status TEXT NOT NULL CHECK (\n        processing_status IN ('discovered', 'metadata_collected', 'gone')\n    ),\n    created_at INTEGER NOT NULL,\n    updated_at INTEGER NOT NULL,\n    UNIQUE (bvid, page_index),\n    FOREIGN KEY (bvid) REFERENCES videos(bvid) ON DELETE RESTRICT\n)"
+    },
+    "video_tag_observations": {
+      "kind": "table",
+      "sql_sha256": "e6968d2fcf3180fbc1aaa00476237deb165262cd1e23639c7b2bf3744a5a32d9",
+      "columns": [
+        "bvid",
+        "state",
+        "observed_at",
+        "error_code",
+        "run_id"
+      ],
+      "sql": "CREATE TABLE video_tag_observations (\n    bvid TEXT PRIMARY KEY,\n    state TEXT NOT NULL CHECK (state IN ('success_nonempty', 'success_empty', 'unavailable')),\n    observed_at INTEGER NOT NULL CHECK (observed_at >= 0),\n    error_code TEXT CHECK (error_code IS NULL OR error_code IN (\n        'auth_error', 'rate_limited', 'not_found', 'transport_error', 'response_error', 'shape_error', 'unavailable'\n    )),\n    run_id TEXT,\n    FOREIGN KEY (bvid) REFERENCES videos(bvid) ON DELETE RESTRICT\n)"
+    },
+    "video_tags": {
+      "kind": "table",
+      "sql_sha256": "9e9ee2a9910365483ce21dfc9a8dabc782dc3c118897356bfe499cc766bd3d92",
+      "columns": [
+        "bvid",
+        "tag_id",
+        "tag_name",
+        "tag_type"
+      ],
+      "sql": "CREATE TABLE video_tags (\n    bvid TEXT NOT NULL,\n    tag_id INTEGER NOT NULL CHECK (tag_id > 0),\n    tag_name TEXT NOT NULL,\n    tag_type TEXT NOT NULL,\n    PRIMARY KEY (bvid, tag_id),\n    FOREIGN KEY (bvid) REFERENCES videos(bvid) ON DELETE RESTRICT\n)"
+    },
+    "videos": {
+      "kind": "table",
+      "sql_sha256": "596a9f8d66ebd66f8f092dd94646a76d68662ff04cea00477dc8d8f9e8e909ce",
+      "columns": [
+        "bvid",
+        "aid",
+        "mid",
+        "title",
+        "pubdate",
+        "created_at",
+        "updated_at"
+      ],
+      "sql": "CREATE TABLE videos (\n    bvid TEXT PRIMARY KEY,\n    aid INTEGER UNIQUE,\n    mid INTEGER NOT NULL,\n    title TEXT NOT NULL,\n    pubdate INTEGER NOT NULL,\n    created_at INTEGER NOT NULL,\n    updated_at INTEGER NOT NULL,\n    FOREIGN KEY (mid) REFERENCES bilibili_users(mid) ON DELETE RESTRICT\n)"
+    },
+    "workflow_asr_profile_configs": {
+      "kind": "table",
+      "sql_sha256": "e05afc8ad232e26777aed7bae45474a3f5aac5a91477f14bcbb0a8cd44f2c4f8",
+      "columns": [
+        "profile_id",
+        "schema_version",
+        "config_json"
+      ],
+      "sql": "CREATE TABLE workflow_asr_profile_configs (\n    profile_id INTEGER PRIMARY KEY,\n    schema_version INTEGER NOT NULL CHECK (schema_version = 2),\n    config_json TEXT NOT NULL CHECK (json_valid(config_json)),\n    FOREIGN KEY (profile_id) REFERENCES workflow_asr_profiles(profile_id) ON DELETE RESTRICT\n)"
+    },
+    "workflow_asr_profiles": {
+      "kind": "table",
+      "sql_sha256": "231ef4c62960208dc5744a75e581e44e3eaabbf20a045e9f95c1ba79f5c48a1d",
+      "columns": [
+        "profile_id",
+        "profile_key",
+        "model_name",
+        "model_revision",
+        "aligner_name",
+        "device",
+        "language",
+        "config_sha256",
+        "created_at"
+      ],
+      "sql": "CREATE TABLE workflow_asr_profiles (\n    profile_id INTEGER PRIMARY KEY,\n    profile_key TEXT NOT NULL,\n    model_name TEXT NOT NULL,\n    model_revision TEXT NOT NULL,\n    aligner_name TEXT NOT NULL,\n    device TEXT NOT NULL,\n    language TEXT,\n    config_sha256 TEXT NOT NULL,\n    created_at INTEGER NOT NULL\n)"
+    },
+    "workflow_attempts": {
+      "kind": "table",
+      "sql_sha256": "4cf82e51b21c0ff61666da896321c3c6808b613ac57e0b99f1dc5f56f448e395",
+      "columns": [
+        "attempt_id",
+        "job_id",
+        "worker_id",
+        "started_at",
+        "finished_at",
+        "outcome",
+        "error_code",
+        "result_json"
+      ],
+      "sql": "CREATE TABLE workflow_attempts (\n    attempt_id TEXT PRIMARY KEY,\n    job_id TEXT NOT NULL,\n    worker_id TEXT NOT NULL,\n    started_at INTEGER NOT NULL,\n    finished_at INTEGER,\n    outcome TEXT NOT NULL CHECK (outcome IN ('running', 'succeeded', 'failed', 'cancelled')),\n    error_code TEXT,\n    result_json TEXT,\n    FOREIGN KEY (job_id) REFERENCES workflow_jobs(job_id) ON DELETE RESTRICT,\n    CHECK ((outcome = 'running' AND finished_at IS NULL)\n        OR (outcome IN ('succeeded', 'failed', 'cancelled') AND finished_at IS NOT NULL))\n)"
+    },
+    "workflow_job_dependencies": {
+      "kind": "table",
+      "sql_sha256": "7e71724c802404627d6dd7591e9673366544ebb2ee88e33d1f4f3b34827c00df",
+      "columns": [
+        "job_id",
+        "prerequisite_job_id"
+      ],
+      "sql": "CREATE TABLE workflow_job_dependencies (\n    job_id TEXT NOT NULL,\n    prerequisite_job_id TEXT NOT NULL,\n    PRIMARY KEY (job_id, prerequisite_job_id),\n    FOREIGN KEY (job_id) REFERENCES workflow_jobs(job_id) ON DELETE CASCADE,\n    FOREIGN KEY (prerequisite_job_id) REFERENCES workflow_jobs(job_id) ON DELETE RESTRICT,\n    CHECK (job_id <> prerequisite_job_id)\n)"
+    },
+    "workflow_jobs": {
+      "kind": "table",
+      "sql_sha256": "26e3ca5b4bd924a9889af0aababf29c26fb0d45705b7bb1bf2e477b7ff5da1b2",
+      "columns": [
+        "job_id",
+        "kind",
+        "video_part_id",
+        "profile_id",
+        "policy_key",
+        "dedupe_key",
+        "payload_json",
+        "status",
+        "priority",
+        "available_at",
+        "lease_owner",
+        "lease_expires_at",
+        "attempt_count",
+        "last_error_code",
+        "created_at",
+        "updated_at"
+      ],
+      "sql": "CREATE TABLE workflow_jobs (\n    job_id TEXT PRIMARY KEY,\n    kind TEXT NOT NULL CHECK (kind IN ('subtitle', 'audio', 'asr', 'publish', 'index', 'proofread', 'render_document')),\n    video_part_id INTEGER,\n    profile_id INTEGER,\n    policy_key TEXT,\n    dedupe_key TEXT NOT NULL UNIQUE,\n    payload_json TEXT NOT NULL,\n    status TEXT NOT NULL CHECK (status IN ('queued', 'running', 'succeeded', 'failed', 'cancelled')),\n    priority INTEGER NOT NULL DEFAULT 0,\n    available_at INTEGER NOT NULL,\n    lease_owner TEXT,\n    lease_expires_at INTEGER,\n    attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),\n    last_error_code TEXT,\n    created_at INTEGER NOT NULL,\n    updated_at INTEGER NOT NULL,\n    FOREIGN KEY (video_part_id) REFERENCES video_parts(video_part_id) ON DELETE RESTRICT,\n    FOREIGN KEY (profile_id) REFERENCES workflow_asr_profiles(profile_id) ON DELETE RESTRICT,\n    CHECK ((kind = 'asr' AND profile_id IS NOT NULL) OR kind <> 'asr')\n)"
+    },
+    "workflow_publications": {
+      "kind": "table",
+      "sql_sha256": "b0628281a9279ea5da3cf57ee06dd215c07f7a999b42854c2f3781adebc0b355",
+      "columns": [
+        "publication_id",
+        "video_part_id",
+        "transcript_id",
+        "published_at",
+        "artifact_json"
+      ],
+      "sql": "CREATE TABLE workflow_publications (\n    publication_id INTEGER PRIMARY KEY,\n    video_part_id INTEGER NOT NULL,\n    transcript_id INTEGER NOT NULL,\n    published_at INTEGER NOT NULL,\n    artifact_json TEXT NOT NULL,\n    UNIQUE (video_part_id, transcript_id),\n    FOREIGN KEY (video_part_id) REFERENCES video_parts(video_part_id) ON DELETE RESTRICT,\n    FOREIGN KEY (transcript_id) REFERENCES transcripts(transcript_id) ON DELETE RESTRICT\n)"
+    },
+    "workflow_quality_assessments": {
+      "kind": "table",
+      "sql_sha256": "b66a3262321bcbc9db04a7597858042288e583a5a831954e91c66631b4c09f80",
+      "columns": [
+        "assessment_id",
+        "video_part_id",
+        "source_kind",
+        "score",
+        "assessor",
+        "details_json",
+        "assessed_at"
+      ],
+      "sql": "CREATE TABLE workflow_quality_assessments (\n    assessment_id INTEGER PRIMARY KEY,\n    video_part_id INTEGER NOT NULL,\n    source_kind TEXT NOT NULL CHECK (source_kind IN ('subtitle-ai', 'subtitle-cc', 'asr-local')),\n    score REAL NOT NULL CHECK (score >= 0.0 AND score <= 1.0),\n    assessor TEXT NOT NULL,\n    details_json TEXT NOT NULL,\n    assessed_at INTEGER NOT NULL,\n    FOREIGN KEY (video_part_id) REFERENCES video_parts(video_part_id) ON DELETE RESTRICT\n)"
+    }
+  },
+  "derived_groups": [
+    {
+      "name": "transcript-search-v1",
+      "objects": {
+        "transcript_fts": [
+          {
+            "kind": "table",
+            "sql_sha256": "3d27f412f990d0d243f7aa876c96f653fb491de47043925163f6451a265fce39"
+          },
+          {
+            "kind": "table",
+            "sql_sha256": "068f019d7bd50bdf0eee56e31b97b1a9ebc34ff1521677c70eee88d0f1827db8"
+          },
+          {
+            "kind": "table",
+            "sql_sha256": "2442acbca8b4108612a938f80b04c418ded301d51afca1e50106faae99c93f23"
+          }
+        ],
+        "transcript_fts_config": [
+          {
+            "kind": "table",
+            "sql_sha256": "feab30aa2a4ec277ddbfc398979f2dac87855afb664280dbfcc497b166ff6161"
+          }
+        ],
+        "transcript_fts_content": [
+          {
+            "kind": "table",
+            "sql_sha256": "7797626a1b6829170ab326f240ab3f3c03a00759b3ab71d2bc09ce18378da9d6"
+          }
+        ],
+        "transcript_fts_data": [
+          {
+            "kind": "table",
+            "sql_sha256": "3d4b05f585389ac9fc915810742c8cbaf2c8a2c741d1197a60e029b3203913e3"
+          }
+        ],
+        "transcript_fts_docsize": [
+          {
+            "kind": "table",
+            "sql_sha256": "8e8ff3fe9c58bb81135338e91e02c6df98e49e5bf3052633babc99bf23737f1c"
+          }
+        ],
+        "transcript_fts_idx": [
+          {
+            "kind": "table",
+            "sql_sha256": "b53e976f799e9cffe42363cdcb9a3ebe84dc58cf4ef66a3a4ea3cc12a50b1ee1"
+          }
+        ],
+        "transcript_fts_index_meta": [
+          {
+            "kind": "table",
+            "sql_sha256": "2e8e4b21b76246eed48ab9aa2bd258741344ebfda03512a438872849c0d6ea2e"
+          }
+        ]
+      }
+    }
+  ]
+}

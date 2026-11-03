@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SuperCatQR/bilibili-asr-archive/docs/contracts/publication-draft-catalog-v3.schema.json",
+  "title": "Reader Publication Draft Catalog Version 3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "manuscriptType",
+    "articles"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 3
+    },
+    "manuscriptType": {
+      "const": "publication-draft"
+    },
+    "articles": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "publication-draft-catalog.schema.json#/$defs/article"
+          },
+          {
+            "$ref": "#/$defs/universalArticle"
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "universalArticle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manuscriptType",
+        "slug",
+        "title",
+        "summary",
+        "tags",
+        "attribution",
+        "editorNote",
+        "editionId",
+        "aiRevisionId",
+        "videoPartId",
+        "sourceUrl",
+        "contentSha256",
+        "artifactSha256",
+        "reviewStatus",
+        "createdAt",
+        "file",
+        "reviewFile",
+        "reviewArtifactSha256",
+        "platform",
+        "externalVideoId",
+        "partIndex",
+        "sourceMetadata",
+        "sourcePublishedAt",
+        "pubdateUnix",
+        "contentVersion"
+      ],
+      "properties": {
+        "manuscriptType": {
+          "const": "publication-draft"
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^edition-[0-9a-f]{32}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "attribution": {
+          "type": "string",
+          "minLength": 1
+        },
+        "editorNote": {
+          "type": "string"
+        },
+        "editionId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "aiRevisionId": {
+          "$ref": "#/$defs/sha256"
+        },
+        "videoPartId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sourceUrl": {
+          "type": "string",
+          "pattern": "^https://(?:www\\.bilibili\\.com/video/[A-Za-z0-9_-]+/\\?p=[1-9][0-9]*|www\\.youtube\\.com/watch\\?v=[A-Za-z0-9_-]{11})$"
+        },
+        "contentSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "artifactSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "reviewStatus": {
+          "enum": [
+            "pending-review",
+            "in-review",
+            "changes-requested",
+            "approved",
+            "rejected"
+          ]
+        },
+        "createdAt": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Edition creation Unix timestamp in seconds"
+        },
+        "file": {
+          "type": "string",
+          "pattern": "^drafts/edition-[0-9a-f]{32}/preview\\.md$"
+        },
+        "reviewFile": {
+          "type": "string",
+          "pattern": "^drafts/edition-[0-9a-f]{32}/review\\.md$"
+        },
+        "reviewArtifactSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "platform": {
+          "enum": [
+            "bilibili",
+            "youtube"
+          ]
+        },
+        "externalVideoId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "partIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sourceMetadata": {
+          "$ref": "source-metadata-v1.schema.json"
+        },
+        "sourcePublishedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+        },
+        "pubdateUnix": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 9223372036854776000
+        },
+        "contentVersion": {
+          "const": 2
+        }
+      }
+    }
+  },
+  "description": "Mixed catalog: historical content keeps its exact version-2 article shape; content-version 2 uses the universal shape. Also check canonical source/part/path equality, metadata identity, derived timestamps and file hashes."
+}

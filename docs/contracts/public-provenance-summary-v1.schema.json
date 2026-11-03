@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Approved public provenance summary version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "schema_version",
+    "release_id",
+    "edition_id",
+    "revision_id",
+    "content_sha256",
+    "artifact_sha256",
+    "private_graph_sha256",
+    "published_at"
+  ],
+  "properties": {
+    "format": {
+      "const": "public-provenance-summary/v1"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "release_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "edition_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "revision_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "artifact_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "private_graph_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "published_at": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

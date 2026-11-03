@@ -1,0 +1,325 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SuperCatQR/bilibili-asr-archive/docs/contracts/archive-task-state-backup-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "dependentRequired": {"runtime_policy": ["runtime_exclusions"], "runtime_exclusions": ["runtime_policy"]},
+  "required": [
+    "format",
+    "profile",
+    "container",
+    "database_contract",
+    "runtime_contract",
+    "producer_version",
+    "source",
+    "files",
+    "tables",
+    "media_dependencies",
+    "inactive_archive",
+    "media_self_contained",
+    "restore_policy",
+    "no_external_control_state",
+    "backup_job_state",
+    "observation",
+    "created_at",
+    "content_id"
+  ],
+  "properties": {
+    "format": {
+      "const": "archive-task-state-backup/v1"
+    },
+    "profile": {
+      "const": "task-state"
+    },
+    "container": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "compression",
+        "encryption"
+      ],
+      "properties": {
+        "compression": {
+          "const": "stored"
+        },
+        "encryption": {
+          "type": "null"
+        }
+      }
+    },
+    "database_contract": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "runtime_contract": {
+      "enum": [
+        "bilibili-v1",
+        "universal-v2"
+      ]
+    },
+    "runtime_policy": {"const": "archive-runtime-v1"},
+    "runtime_exclusions": {
+      "type": "array",
+      "items": {"type": "object", "additionalProperties": false, "required": ["path", "category", "state", "count"], "properties": {
+        "path": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "category": {"enum": ["runtime-fence", "asr-input-reservation", "runtime-export-lock"]},
+        "state": {"type": "string", "minLength": 1, "maxLength": 128},
+        "count": {"type": "integer", "minimum": 0},
+        "base": {"type": "string", "minLength": 1, "maxLength": 4096}
+      }}
+    },
+    "producer_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root",
+        "database_schema_sha256"
+      ],
+      "properties": {
+        "root": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "database_schema_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "size",
+          "sha256"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "minLength": 64,
+            "maxLength": 64
+          }
+        }
+      }
+    },
+    "tables": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "columns",
+          "row_count",
+          "sha256",
+          "includes_rowid"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "columns": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            }
+          },
+          "row_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "minLength": 64,
+            "maxLength": 64
+          },
+          "includes_rowid": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "media_dependencies": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "size",
+          "sha256",
+          "available",
+          "kind"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "minLength": 64,
+            "maxLength": 64
+          },
+          "available": {
+            "const": true
+          },
+          "kind": {
+            "const": "audio-reference"
+          }
+        }
+      }
+    },
+    "inactive_archive": {
+      "const": true
+    },
+    "media_self_contained": {
+      "const": false
+    },
+    "restore_policy": {
+      "const": "read-only-evidence-never-start-workers/v1"
+    },
+    "no_external_control_state": {
+      "type": "boolean"
+    },
+    "backup_job_state": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "started_at",
+        "finished_at",
+        "sqlite_snapshot_sha256",
+        "component_versions",
+        "atomic_cross_components"
+      ],
+      "properties": {
+        "protocol": {
+          "const": "sqlite-read-transaction-and-stable-components/v1"
+        },
+        "started_at": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "finished_at": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "sqlite_snapshot_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "component_versions": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "size",
+              "sha256",
+              "source_path",
+              "kind",
+              "lock_path"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              },
+              "size": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$",
+                "minLength": 64,
+                "maxLength": 64
+              },
+              "source_path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              },
+              "kind": {
+                "enum": [
+                  "retry-control/v1",
+                  "retry-control/v2",
+                  "backup-job-state/v1"
+                ]
+              },
+              "lock_path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              }
+            }
+          }
+        },
+        "atomic_cross_components": {
+          "const": false
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "content_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "minLength": 64,
+      "maxLength": 64
+    }
+  }
+}

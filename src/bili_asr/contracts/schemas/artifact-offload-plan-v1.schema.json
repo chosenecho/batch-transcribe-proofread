@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SuperCatQR/bilibili-asr-archive/docs/contracts/artifact-offload-plan-v1.schema.json",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "artifact-offload-plan-v1"
+    },
+    "target_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "selection": {
+      "type": "object",
+      "properties": {
+        "kinds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "creator_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "video_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "part_ids": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "kinds",
+        "platforms",
+        "creator_ids",
+        "video_ids",
+        "part_ids",
+        "versions"
+      ],
+      "additionalProperties": false
+    },
+    "database_contract": {
+      "enum": [
+        "bilibili-v1",
+        "universal-v2"
+      ]
+    },
+    "integrity_depth": {
+      "const": "deep"
+    },
+    "external_holds_verified": {
+      "type": "boolean"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "copy_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "minLength": 64,
+            "maxLength": 64
+          },
+          "root": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "minLength": 64,
+            "maxLength": 64
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "fingerprint": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 5,
+            "maxItems": 5
+          },
+          "physical_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "link_count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "object_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "copy_id",
+          "root",
+          "path",
+          "sha256",
+          "size",
+          "fingerprint",
+          "physical_id",
+          "link_count",
+          "object_ids",
+          "versions"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "held": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "copy_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "minLength": 64,
+            "maxLength": 64
+          },
+          "root": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          },
+          "object_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "copy_id",
+          "root",
+          "path",
+          "reasons",
+          "object_ids"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "estimate": {
+      "type": "object",
+      "properties": {
+        "reclaimable_content_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "target_payload_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "restore_workspace_bytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "reclaimable_content_bytes",
+        "target_payload_bytes",
+        "restore_workspace_bytes"
+      ],
+      "additionalProperties": false
+    },
+    "requires_execution_revalidation": {
+      "const": true
+    },
+    "plan_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "minLength": 64,
+      "maxLength": 64
+    }
+  },
+  "required": [
+    "schema",
+    "target_id",
+    "selection",
+    "database_contract",
+    "integrity_depth",
+    "external_holds_verified",
+    "items",
+    "held",
+    "estimate",
+    "requires_execution_revalidation",
+    "plan_sha256"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,11 @@
+[Unit]
+Description=Run archive retry maintenance every minute
+
+[Timer]
+OnBootSec=60
+OnUnitInactiveSec=60
+AccuracySec=10
+Unit=bili-asr-retry-maintenance.service
+
+[Install]
+WantedBy=timers.target

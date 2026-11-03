@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Private editorial export with portable provenance version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "manuscriptType",
+    "snapshotId",
+    "files",
+    "contractProfile"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 2
+    },
+    "manuscriptType": {
+      "const": "editorial-export"
+    },
+    "snapshotId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "files": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 11,
+      "allOf": [
+        {
+          "contains": {
+            "properties": {
+              "path": {
+                "const": "ai-draft.md"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "path": {
+                "const": "review.md"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "path": {
+                "const": "edition.md"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "path": {
+                "const": "edition.json"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "path": {
+                "const": "review.json"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "path": {
+                "const": "differences/ai.patch"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "path": {
+                "const": "differences/parent.patch"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "path": {
+                "const": "provenance.json"
+              }
+            }
+          }
+        }
+      ],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256"
+        ],
+        "properties": {
+          "path": {
+            "enum": [
+              "ai-draft.md",
+              "review.md",
+              "edition.md",
+              "edition.json",
+              "review.json",
+              "differences/ai.patch",
+              "differences/parent.patch",
+              "provenance.json",
+              "import-origin.json",
+              "preserved-body.md",
+              "differences/preserved.patch"
+            ]
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "contractProfile": {
+      "const": "private-provenance-v1"
+    }
+  }
+}

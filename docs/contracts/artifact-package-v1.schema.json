@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SuperCatQR/bilibili-asr-archive/docs/contracts/artifact-package-v1.schema.json",
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": "bili-asr-artifact-package"
+    },
+    "format_version": {
+      "const": 1
+    },
+    "operation_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$",
+      "maxLength": 128
+    },
+    "plan_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "batch_index": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "object_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "minLength": 64,
+            "maxLength": 64
+          },
+          "member": {
+            "type": "string",
+            "pattern": "^objects/[0-9a-f]{64}$",
+            "maxLength": 72
+          },
+          "storage_key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "minLength": 64,
+            "maxLength": 64
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "source_generation": {
+            "type": "object",
+            "properties": {
+              "device": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "inode": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "size_bytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "mtime_ns": {
+                "type": "integer"
+              },
+              "ctime_ns": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "device",
+              "inode",
+              "size_bytes",
+              "mtime_ns",
+              "ctime_ns"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "object_id",
+          "member",
+          "storage_key",
+          "sha256",
+          "size_bytes",
+          "source_generation"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 100000
+    },
+    "package_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "minLength": 64,
+      "maxLength": 64
+    }
+  },
+  "required": [
+    "format",
+    "format_version",
+    "operation_id",
+    "plan_sha256",
+    "batch_index",
+    "objects",
+    "package_id"
+  ],
+  "additionalProperties": false
+}

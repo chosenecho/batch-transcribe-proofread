@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SuperCatQR/bilibili-asr-archive/docs/contracts/artifact-policy-v1.schema.json",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "minimum_age_seconds": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "trigger_free_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "stop_free_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "minimum_free_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "batch_bytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "batch_objects": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "max_concurrency": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 8
+    },
+    "bytes_per_second": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "scan_interval_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "backoff_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "download_bytes_per_second": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "download_workspace_multiplier": {
+      "type": "integer",
+      "minimum": 2
+    },
+    "mode": {
+      "enum": [
+        "off",
+        "copy",
+        "offload"
+      ]
+    },
+    "target_id": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._:-]*$"
+        }
+      ]
+    },
+    "selection": {
+      "type": "object",
+      "properties": {
+        "kinds": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "audio",
+              "bundle",
+              "document",
+              "release",
+              "source-evidence",
+              "migration"
+            ]
+          }
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "creator_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "video_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "part_ids": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "kinds",
+        "platforms",
+        "creator_ids",
+        "video_ids",
+        "part_ids",
+        "versions"
+      ],
+      "additionalProperties": false
+    },
+    "priority": {
+      "enum": [
+        "oldest",
+        "largest"
+      ]
+    }
+  },
+  "required": [
+    "version",
+    "mode",
+    "target_id",
+    "selection",
+    "minimum_age_seconds",
+    "trigger_free_bytes",
+    "stop_free_bytes",
+    "minimum_free_bytes",
+    "batch_bytes",
+    "batch_objects",
+    "max_concurrency",
+    "bytes_per_second",
+    "scan_interval_seconds",
+    "backoff_seconds",
+    "priority",
+    "download_bytes_per_second",
+    "download_workspace_multiplier"
+  ],
+  "additionalProperties": false
+}

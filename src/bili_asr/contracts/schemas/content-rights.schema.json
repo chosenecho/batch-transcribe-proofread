@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Public content license notices",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "notices"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "notices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["editionId", "videoPartId", "contentSha256", "license", "licenseUrl", "rightsHolder", "sourceCreator", "attribution", "sourceUrl", "scope", "expiresAt"],
+        "properties": {
+          "editionId": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+          "videoPartId": {"type": "integer", "minimum": 1},
+          "contentSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "license": {"enum": ["CC-BY-4.0", "CC-BY-SA-4.0", "CC0-1.0"]},
+          "licenseUrl": {"type": "string", "format": "uri"},
+          "rightsHolder": {"type": "string", "minLength": 1},
+          "sourceCreator": {"type": "string", "minLength": 1},
+          "attribution": {"type": "string", "minLength": 1},
+          "sourceUrl": {"type": "string", "format": "uri"},
+          "scope": {"const": ["reader-document", "full-source-transcript"]},
+          "expiresAt": {"type": ["integer", "null"], "minimum": 1}
+        }
+      }
+    }
+  }
+}

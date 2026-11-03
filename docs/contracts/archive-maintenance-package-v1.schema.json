@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SuperCatQR/bilibili-asr-archive/docs/contracts/archive-maintenance-package-v1.schema.json",
+  "title": "Offline private-history archive maintenance package v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "profile", "source", "selection", "database_contract", "tables", "files", "redaction_policy", "content_id", "producer_version", "created_at"],
+  "properties": {
+    "format": {"const": "archive-maintenance-package/v1"},
+    "profile": {"const": "private-history"},
+    "content_id": {"$ref": "#/$defs/hash"},
+    "producer_version": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "minLength": 1, "maxLength": 64},
+    "database_contract": {"$ref": "#/$defs/contract"},
+    "redaction_policy": {"const": "none-frozen-private-history; credentials-models-cache-logs-excluded"},
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["runtime_contract", "database_schema_sha256", "excluded", "fingerprint", "file_count", "total_bytes"],
+      "properties": {
+        "runtime_contract": {"enum": ["bilibili-v1", "universal-v2"]},
+        "database_schema_sha256": {"$ref": "#/$defs/contract"},
+        "fingerprint": {"$ref": "#/$defs/hash"},
+        "file_count": {"type": "integer", "minimum": 1},
+        "total_bytes": {"type": "integer", "minimum": 0},
+        "runtime_policy": {"const": "archive-runtime-v1"},
+        "excluded": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["path", "category"], "properties": {"path": {"$ref": "#/$defs/text"}, "category": {"enum": ["credentials", "legacy-operational-manifest", "sqlite-sidecar", "model-weights", "operational-logs", "cache", "runtime-fence", "asr-input-reservation", "runtime-export-lock"]}, "state": {"type": "string", "minLength": 1, "maxLength": 128}, "count": {"type": "integer", "minimum": 0}, "base": {"type": "string", "minLength": 1}}}}
+      }
+    },
+    "selection": {"oneOf": [
+      {"type": "object", "additionalProperties": false, "required": ["mode", "policy"], "properties": {"mode": {"const": "full"}, "policy": {"const": "all-private-history/v1"}}},
+      {"type": "object", "additionalProperties": false, "required": ["mode", "policy", "requested_part_ids", "resolved_part_ids", "requested_bvids"], "properties": {"mode": {"const": "selected"}, "policy": {"const": "native-full-part-history-fk-owned-json/v1"}, "requested_part_ids": {"$ref": "#/$defs/parts"}, "resolved_part_ids": {"$ref": "#/$defs/parts"}, "requested_bvids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/text"}}, "observation_policy": {"const": "source-observations-closure/v1"}, "observation_boundary": {"type": "object", "additionalProperties": false, "required": ["shared_creator_pages", "raw_observation_rows"], "properties": {"shared_creator_pages": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/text"}}, "raw_observation_rows": {"type": "integer", "minimum": 0}}}}}
+    ]},
+    "tables": {"type": "array", "minItems": 1, "maxItems": 10000, "items": {"type": "object", "additionalProperties": false, "required": ["name", "columns", "row_count", "sha256", "includes_rowid"], "properties": {"name": {"$ref": "#/$defs/text"}, "columns": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}}, "row_count": {"type": "integer", "minimum": 0}, "sha256": {"$ref": "#/$defs/hash"}, "includes_rowid": {"type": "boolean"}}}},
+    "files": {"type": "array", "minItems": 1, "maxItems": 100000, "items": {"type": "object", "additionalProperties": false, "required": ["path", "size", "sha256"], "properties": {"path": {"$ref": "#/$defs/text"}, "size": {"type": "integer", "minimum": 0}, "sha256": {"$ref": "#/$defs/hash"}}}}
+  },
+  "$defs": {
+    "hash": {"type": "string", "minLength": 64, "maxLength": 64, "pattern": "^[0-9a-f]{64}$"},
+    "contract": {"type": "string", "minLength": 71, "maxLength": 71, "pattern": "^sha256:[0-9a-f]{64}$"},
+    "text": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "parts": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "integer", "minimum": 1}}
+  }
+}

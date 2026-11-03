@@ -1,0 +1,156 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "batch-transcribe-proofread"
+version = "0.1.0"
+description = "Batch local transcription, AI proofreading, review, publication and archival tools"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "jsonschema>=4.25,<5",
+    "requests>=2.32",
+    "tzdata>=2026.3; sys_platform == 'win32'",
+]
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
+
+[project.scripts]
+batch-transcribe = "bili_asr.cli:main"
+bili-asr = "bili_asr.cli:main"
+
+[project.optional-dependencies]
+remote = [
+    "paramiko>=5.0,<6",
+]
+dev = [
+    "mypy>=1.19,<3",
+    # The light members of the ASR stack.  The test double exercises the real audio path,
+    # which calls numpy/soundfile/soxr directly; of the three, only soundfile and soxr are
+    # declared in the [asr] extra — numpy arrives transitively through both, and is named
+    # here explicitly because the test tree imports it in its own right.  The heavy three
+    # (transformers/accelerate/torch) are substituted by tests/conftest.py's ``mock_torch``
+    # and tests/_asr_fakes.py, so they are deliberately NOT test dependencies.
+    "numpy>=1.26",
+    "packaging>=24",
+    "pytest>=8",
+    # Installed-entrypoint regressions build wheels without an isolated backend.
+    "setuptools>=69",
+    "wheel",
+    "coverage[toml]>=7.10.6",
+    "pip-audit>=2.7",
+    "ruff>=0.15",
+    "responses>=0.25",
+    "soundfile>=0.12",
+    "soxr>=0.5",
+]
+asr = [
+    # Qwen3-ASR has native transformers support from 5.13.0, which is the whole engine: the
+    # decoder for text and the forced aligner for per-character timings.
+    # Freeze the real CUDA-tested graph. Transformers 5.19 fails model-class
+    # import on the supported CUDA Torch 2.5.1 host (#439); pip check cannot detect it.
+    # Upgrade these together only after real class import and ASR/alignment acceptance.
+    "transformers==5.17.0",
+    "huggingface-hub==1.31.0",
+    # ``device_map=`` (the loader path both checkpoints use) requires accelerate.
+    "accelerate>=1.0",
+    # Reading archived audio; processors receive decoded 16 kHz waveform arrays.
+    "soundfile>=0.12",
+    # Retain the existing deployment dependency; production processors receive
+    # decoded waveform arrays, and container decoding uses our ffmpeg path.
+    "librosa>=1.0",
+    # Resampling decoded inputs before passing them to the processor.
+    "soxr>=0.5",
+    # NOTE: torch is deliberately NOT listed here. The verified AMD/WSL recipe installs the ROCm
+    # wheel from repo.radeon.com (docs/wsl-rocm-gpu.md step 6) together with the matching torchaudio;
+    # letting pip resolve ``torch`` from an index silently gets the wrong build for this host.
+    #
+    # Accelerate depends on torch transitively. The uv exclusion below keeps that externally
+    # supplied runtime out of resolution; use ``uv sync --extra asr --inexact`` to retain it.
+    # With pip, install and verify the host's torch build BEFORE installing this extra.
+    # NOTE: the ``ffmpeg`` binary is required too (README.md) — it decodes the .m4a/AAC the download
+    # layer writes, because libsndfile cannot open that container. It is a platform package rather
+    # than a pip one, so it cannot be declared here; ``_read_audio`` raises ``ASRDependencyError``
+    # naming it when it is absent.
+]
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+default = true
+
+[tool.uv]
+# Host-specific GPU wheels are provisioned separately (docs/wsl-rocm-gpu.md). Exact sync
+# removes packages absent from the lock, so existing GPU environments must use --inexact.
+exclude-dependencies = ["torch"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"bili_asr" = ["_build_identity.json"]
+"bili_asr.contracts" = ["schemas/*.json", "database-fingerprints.json"]
+"bili_asr.storage" = ["schema.sql", "schema-transcripts.sql", "schema-workflow.sql", "schema-editorial.sql", "schema-editorial-replay-index.sql", "schema-content-v2.sql", "schema-observations.sql", "schema-source-observations.sql", "schema-source-sync.sql", "schema-preserved-body-import.sql", "schema-source-supplements.sql", "schema-artifact-storage.sql", "schema-artifact-online.sql", "schema-rights.sql", "migration-source-bilibili-v1.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Registered markers (plan 008-pytest-markers). The live/scale opt-in env gates
+# (BILI_LIVE_SMOKE / BILI_SCALE) centralize in tests/conftest.py's
+# opt_in_gate fixture; the markers make the gated tests selectable
+# (``-m live_smoke`` / ``-m scale``) and CI-gateable.
+markers = [
+    "live_smoke: opt-in live network probe; skips unless BILI_LIVE_SMOKE=1",
+    "scale: opt-in local scale probe; skips unless BILI_SCALE=1",
+    "slow: opt-in slow test",
+]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+parallel = true
+relative_files = true
+patch = ["subprocess", "_exit"]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+
+[tool.coverage.paths]
+source = ["src/bili_asr", "*/site-packages/bili_asr", "*/src/bili_asr"]
+
+[tool.mypy]
+python_version = "3.12"
+platform = "linux"
+files = [
+    "src/bili_asr/file_ops.py",
+    "src/bili_asr/storage/schema_contract.py",
+    # Pure leaves and frozen identities: a field rename here would change a
+    # persisted profile or contract identity, so they are checked first.
+    "src/bili_asr/workflow_models.py",
+    "src/bili_asr/workflow_payloads.py",
+    "src/bili_asr/canonical_json.py",
+    "src/bili_asr/platform_identity.py",
+    "src/bili_asr/profile_codec.py",
+    "src/bili_asr/contracts",
+    # Injected ports: the executor's and the source adapters' Protocol
+    # signatures are only contracts if something checks them.
+    "src/bili_asr/workflow_runtime_ports.py",
+    "src/bili_asr/sources/protocols.py",
+]
+strict = true
+# Check the listed boundaries strictly; imported legacy modules retain types
+# but are not silently promoted into this incremental rollout's error scope.
+follow_imports = "silent"
+# A declared POSIX-only call is guarded by `os.name == "posix"` at every site.
+# Without this pin those correct guards report as missing attributes on a
+# Windows developer machine while Linux CI (the platform that runs them) is
+# silent; the platform must match the one whose behaviour is being claimed.
+
+# `jsonschema` ships no stubs.  Declaring that here keeps the pinned lockfile
+# untouched: adding a stub package would change `uv lock` output and the CI
+# `uv lock --check` gate, which this rollout must not perturb.  The missing
+# types are confined to this one module, so the cost stays local and visible.
+[[tool.mypy.overrides]]
+module = ["jsonschema", "jsonschema.*", "referencing", "referencing.*"]
+ignore_missing_imports = true

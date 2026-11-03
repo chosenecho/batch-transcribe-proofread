@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 2,
+  "manuscriptType": "publication",
+  "articles": [
+    {
+      "manuscriptType": "publication",
+      "slug": "part-7",
+      "title": "A frozen publication title",
+      "summary": "A frozen reader summary.",
+      "tags": ["transcript"],
+      "attribution": "AI-assisted transcript compilation.",
+      "editorNote": "This edition clarifies an ambiguous name.",
+      "releaseId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "editionId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "aiRevisionId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "videoPartId": 7,
+      "bvid": "BV1haEB66Eg1",
+      "pageIndex": 1,
+      "sourceUrl": "https://www.bilibili.com/video/BV1haEB66Eg1/?p=2",
+      "contentSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "artifactSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "templateVersion": "publish-v1",
+      "publishedAt": 1791360000,
+      "file": "articles/part-7/publish.md",
+      "reviewFile": "articles/part-7/review.md",
+      "reviewArtifactSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    }
+  ]
+}

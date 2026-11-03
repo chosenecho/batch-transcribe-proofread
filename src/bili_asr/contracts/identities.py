@@ -1,0 +1,19 @@
+"""Stable identities independent of contract and content catalogs."""
+BILIBILI_V1 = "bilibili-v1"
+UNIVERSAL_V2 = "universal-v2"
+RUNTIME_CONTRACTS = (BILIBILI_V1, UNIVERSAL_V2)
+WORKFLOW_PAYLOAD_VERSION = 1
+ASR_PROFILE_VERSION = 2
+ASR_EVIDENCE_VERSION = 1
+BUNDLE_SCHEMA = "archive-bundle-v2"
+BUNDLE_SCHEMA_V3 = "archive-bundle-v3"
+ORIGIN_PROFILE = "universal-origin-v1"
+ORIGIN_PROFILE_V2 = "universal-origin-v2"
+DESCRIPTION_SUPPLEMENT_POLICY = "legacy-description-supplement-v1"
+IMPORT_EXTENSION = "preserved-body-import-v1"
+LEGACY_FACTS_POLICY = "legacy-frozen-facts-v1"
+STORED_VTT_POLICY = "stored-segments-webvtt/v1"
+SOURCE_SUPPLEMENT_POLICY = "legacy-part-title-supplement-v1"
+ARTIFACT_STORAGE = "artifact-storage-v1"
+ARTIFACT_ONLINE = "artifact-online-v1"
+SCHEMA_BASE_URI = "https://github.com/SuperCatQR/bilibili-asr-archive/docs/contracts/"

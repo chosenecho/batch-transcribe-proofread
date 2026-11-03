@@ -1,0 +1,2767 @@
+{
+  "format_version": 1,
+  "contracts": [
+    {
+      "identity": "archive-task-state-backup/v2",
+      "owner": "archive",
+      "authority": [
+        "src/bili_asr/services/maintenance_task_state.py",
+        "src/bili_asr/services/maintenance_media.py"
+      ],
+      "consumers": [
+        "services.maintenance_state_reader",
+        "services.maintenance_backup"
+      ],
+      "capabilities": [
+        "validate",
+        "save",
+        "read"
+      ],
+      "dependencies": [
+        "archive-task-state-backup/v1",
+        "artifact-storage-v1",
+        "artifact-package-v2",
+        "ssh-directory/v1"
+      ],
+      "schema": "archive-task-state-backup-v2.schema.json"
+    },
+    {
+      "identity": "artifact-policy-v2",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/services/audio_retention_policy.py"
+      ],
+      "consumers": [
+        "cli.artifacts",
+        "services.artifact_consumer"
+      ],
+      "capabilities": [
+        "validate",
+        "read",
+        "write"
+      ],
+      "dependencies": [
+        "artifact-online-v1",
+        "artifact-package-v2"
+      ],
+      "schema": "artifact-policy-v2.schema.json"
+    },
+    {
+      "identity": "artifact-package-v2",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/artifact_packages.py"
+      ],
+      "consumers": [
+        "services.artifact_transfer",
+        "services.artifact_access",
+        "services.artifact_restore"
+      ],
+      "capabilities": [
+        "validate",
+        "read",
+        "write"
+      ],
+      "dependencies": [
+        "artifact-storage-v1"
+      ],
+      "schema": "artifact-package-v2.schema.json"
+    },
+    {
+      "identity": "artifact-provenance/v1",
+      "owner": "provenance",
+      "authority": [
+        "src/bili_asr/provenance_contract.py",
+        "src/bili_asr/provenance_metadata.py"
+      ],
+      "consumers": [
+        "cli.provenance",
+        "publication_export",
+        "external-reader"
+      ],
+      "capabilities": [
+        "read",
+        "validate",
+        "export"
+      ],
+      "dependencies": [
+        "frozen-input/v1",
+        "frozen-input/v2",
+        "asr-evidence/v1",
+        "metadata-acceptance/v1",
+        "source-observations/v1"
+      ],
+      "schema": "artifact-provenance-v1.schema.json"
+    },
+    {
+      "identity": "public-provenance-summary/v1",
+      "owner": "provenance",
+      "authority": [
+        "src/bili_asr/contracts/schemas/public-provenance-summary-v1.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [],
+      "schema": "public-provenance-summary-v1.schema.json"
+    },
+    {
+      "identity": "editorial-provenance-export-manifest/v1",
+      "owner": "provenance",
+      "authority": [
+        "src/bili_asr/contracts/schemas/editorial-provenance-export-manifest-v1.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [
+        "artifact-provenance/v1",
+        "editorial-export-manifest/v1"
+      ],
+      "schema": "editorial-provenance-export-manifest-v1.schema.json"
+    },
+    {
+      "identity": "retry-control/v2",
+      "owner": "workflow",
+      "authority": [
+        "src/bili_asr/services/retry_control.py"
+      ],
+      "consumers": [
+        "services.reference_backup",
+        "services.workflow_retry",
+        "services.retry_preflight",
+        "services.maintenance_task_state"
+      ],
+      "capabilities": [
+        "validate",
+        "capture",
+        "read"
+      ],
+      "dependencies": [
+        "workflow-retry-control/v1"
+      ],
+      "schema": "retry-control-v2.schema.json"
+    },
+    {
+      "identity": "archive-reference-backup/v2",
+      "owner": "archive",
+      "authority": [
+        "src/bili_asr/services/reference_backup.py"
+      ],
+      "consumers": [
+        "cli.remote_storage",
+        "services.archive_recovery"
+      ],
+      "capabilities": [
+        "validate",
+        "save",
+        "check",
+        "plan",
+        "restore"
+      ],
+      "dependencies": [
+        "archive-reference-backup/v1",
+        "retry-control/v2"
+      ],
+      "schema": "archive-reference-backup-v2.schema.json"
+    },
+    {
+      "identity": "metadata-supervision/v1",
+      "owner": "sources",
+      "authority": [
+        "src/bili_asr/services/metadata_supervision.py"
+      ],
+      "consumers": [
+        "cli.meta",
+        "operator-tools"
+      ],
+      "capabilities": [
+        "validate",
+        "read",
+        "write",
+        "retry-decision"
+      ],
+      "dependencies": [],
+      "schema": null
+    },
+    {
+      "identity": "metadata-acceptance/v1",
+      "owner": "sources",
+      "authority": [
+        "src/bili_asr/metadata_acceptance.py",
+        "src/bili_asr/sources/bilibili_metadata_codec.py",
+        "src/bili_asr/storage/metadata_acceptance.py"
+      ],
+      "consumers": [
+        "sources.bilibili_api_gateway",
+        "services.metadata_ingest",
+        "services.metadata_refresh",
+        "storage.metadata",
+        "storage.snapshots",
+        "provenance-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "accept",
+        "read",
+        "snapshot"
+      ],
+      "dependencies": [
+        "universal-v2",
+        "source-observations/v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "source-observations/v1",
+      "owner": "sources",
+      "authority": [
+        "src/bili_asr/source_observations.py",
+        "src/bili_asr/storage/schema-source-observations.sql"
+      ],
+      "consumers": [
+        "storage.source_observations",
+        "storage.snapshots",
+        "cli.source"
+      ],
+      "capabilities": [
+        "extension",
+        "snapshot",
+        "read",
+        "explicit-upgrade"
+      ],
+      "dependencies": [],
+      "schema": null
+    },
+    {
+      "identity": "source-superset/v1",
+      "owner": "sources",
+      "authority": [
+        "src/bili_asr/source_observations.py"
+      ],
+      "consumers": [
+        "storage.source_observations",
+        "cli.source"
+      ],
+      "capabilities": [
+        "read",
+        "reproject",
+        "private-export"
+      ],
+      "dependencies": [
+        "source-observations/v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "source-superset/v2",
+      "owner": "sources",
+      "authority": [
+        "src/bili_asr/source_observations.py"
+      ],
+      "consumers": [
+        "storage.source_observations",
+        "cli.source"
+      ],
+      "capabilities": [
+        "read",
+        "reproject",
+        "private-export"
+      ],
+      "dependencies": [
+        "source-observations/v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "archive-task-state-backup/v1",
+      "owner": "archive",
+      "authority": [
+        "src/bili_asr/services/maintenance_task_state.py"
+      ],
+      "consumers": [
+        "services.maintenance_state_reader",
+        "services.maintenance_backup"
+      ],
+      "capabilities": [
+        "validate",
+        "save",
+        "read"
+      ],
+      "dependencies": [
+        "bilibili-v1",
+        "universal-v2"
+      ],
+      "schema": "archive-task-state-backup-v1.schema.json"
+    },
+    {
+      "identity": "archive-maintenance-package/v2",
+      "owner": "archive",
+      "authority": [
+        "src/bili_asr/services/maintenance_package_core.py",
+        "src/bili_asr/storage/maintenance_scope.py"
+      ],
+      "consumers": [
+        "cli.maintenance_package",
+        "services.maintenance_import"
+      ],
+      "capabilities": [
+        "validate",
+        "export",
+        "inspect",
+        "verify",
+        "import-plan",
+        "import-apply",
+        "import-check"
+      ],
+      "dependencies": [
+        "archive-maintenance-package/v1"
+      ],
+      "schema": "archive-maintenance-package-v2.schema.json"
+    },
+    {
+      "identity": "archive-maintenance-package/v1",
+      "owner": "archive",
+      "authority": [
+        "src/bili_asr/services/maintenance_package_core.py",
+        "src/bili_asr/storage/maintenance_selection.py"
+      ],
+      "consumers": [
+        "cli.maintenance_package",
+        "services.maintenance_package"
+      ],
+      "capabilities": [
+        "validate",
+        "export",
+        "inspect",
+        "verify",
+        "import-plan",
+        "import-apply",
+        "import-check"
+      ],
+      "dependencies": [
+        "bilibili-v1",
+        "universal-v2"
+      ],
+      "schema": "archive-maintenance-package-v1.schema.json"
+    },
+    {
+      "identity": "archive-reference-backup/v1",
+      "owner": "archive",
+      "authority": [
+        "src/bili_asr/services/reference_backup.py"
+      ],
+      "consumers": [
+        "cli.remote_storage",
+        "services.archive_recovery"
+      ],
+      "capabilities": [
+        "validate",
+        "save",
+        "check",
+        "plan",
+        "restore"
+      ],
+      "dependencies": [
+        "artifact-storage-v1",
+        "artifact-package-v1"
+      ],
+      "schema": "archive-reference-backup-v1.schema.json"
+    },
+    {
+      "identity": "ssh-directory/v1",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/remote_storage.py",
+        "src/bili_asr/ssh_storage_agent.py"
+      ],
+      "consumers": [
+        "services.remote_artifacts",
+        "services.reference_backup"
+      ],
+      "capabilities": [
+        "validate",
+        "upload",
+        "read",
+        "range-read"
+      ],
+      "dependencies": [
+        "artifact-package-v1"
+      ],
+      "schema": "ssh-directory-v1.schema.json"
+    },
+    {
+      "identity": "artifact-policy-v1",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/services/artifact_policy.py"
+      ],
+      "consumers": [
+        "cli.artifacts",
+        "services.artifact_consumer"
+      ],
+      "capabilities": [
+        "validate",
+        "read",
+        "write"
+      ],
+      "dependencies": [
+        "artifact-online-v1"
+      ],
+      "schema": "artifact-policy-v1.schema.json"
+    },
+    {
+      "identity": "artifact-online-v1",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/storage/schema-artifact-online.sql"
+      ],
+      "consumers": [
+        "services.artifact_policy",
+        "services.artifact_consumer",
+        "storage.snapshots"
+      ],
+      "capabilities": [
+        "extension",
+        "snapshot",
+        "explicit-upgrade"
+      ],
+      "dependencies": [
+        "artifact-storage-v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "artifact-state-v1",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/services/artifact_state.py"
+      ],
+      "consumers": [
+        "cli.artifacts"
+      ],
+      "capabilities": [
+        "read",
+        "validate"
+      ],
+      "dependencies": [
+        "artifact-storage-v1"
+      ],
+      "schema": "artifact-state-v1.schema.json"
+    },
+    {
+      "identity": "artifact-publication-state-v1",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/services/artifact_state.py"
+      ],
+      "consumers": [
+        "coverage_report",
+        "integrity",
+        "services.workflow_projection"
+      ],
+      "capabilities": [
+        "read",
+        "validate"
+      ],
+      "dependencies": [
+        "artifact-storage-v1"
+      ],
+      "schema": "artifact-publication-state-v1.schema.json"
+    },
+    {
+      "identity": "artifact-storage-v1",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/storage/schema-artifact-storage.sql"
+      ],
+      "consumers": [
+        "storage.artifact_catalog",
+        "services.artifact_catalog_upgrade",
+        "storage.snapshots"
+      ],
+      "capabilities": [
+        "extension",
+        "snapshot",
+        "explicit-upgrade"
+      ],
+      "dependencies": [],
+      "schema": null
+    },
+    {
+      "identity": "artifact-inventory-v1",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/services/artifact_inventory_service.py"
+      ],
+      "consumers": [
+        "cli.artifacts"
+      ],
+      "capabilities": [
+        "validate",
+        "read"
+      ],
+      "dependencies": [],
+      "schema": "artifact-inventory-v1.schema.json"
+    },
+    {
+      "identity": "artifact-offload-plan-v1",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/services/artifact_inventory_service.py"
+      ],
+      "consumers": [
+        "cli.artifacts",
+        "services.artifact_transfer"
+      ],
+      "capabilities": [
+        "validate",
+        "read",
+        "write"
+      ],
+      "dependencies": [
+        "artifact-storage-v1",
+        "artifact-inventory-v1"
+      ],
+      "schema": "artifact-offload-plan-v1.schema.json"
+    },
+    {
+      "identity": "artifact-copy-plan-v1",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/services/artifact_inventory_service.py"
+      ],
+      "consumers": [
+        "cli.artifacts",
+        "services.artifact_transfer",
+        "services.audio_retention"
+      ],
+      "capabilities": [
+        "validate",
+        "read",
+        "write"
+      ],
+      "dependencies": [
+        "artifact-storage-v1",
+        "artifact-inventory-v1"
+      ],
+      "schema": "artifact-copy-plan-v1.schema.json"
+    },
+    {
+      "identity": "artifact-package-v1",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/artifact_packages.py"
+      ],
+      "consumers": [
+        "services.artifact_transfer",
+        "services.artifact_access",
+        "services.artifact_restore"
+      ],
+      "capabilities": [
+        "validate",
+        "read",
+        "write"
+      ],
+      "dependencies": [
+        "artifact-storage-v1"
+      ],
+      "schema": "artifact-package-v1.schema.json"
+    },
+    {
+      "identity": "bilibili-v1",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/storage/schema.sql",
+        "src/bili_asr/storage/schema-transcripts.sql",
+        "src/bili_asr/storage/schema-workflow.sql",
+        "src/bili_asr/storage/schema-editorial.sql"
+      ],
+      "consumers": [
+        "archive_session",
+        "storage.snapshots"
+      ],
+      "capabilities": [
+        "runtime",
+        "snapshot"
+      ],
+      "dependencies": [],
+      "schema": null
+    },
+    {
+      "identity": "universal-v2",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/storage/archive_contracts.py",
+        "src/bili_asr/storage/schema-content-v2.sql",
+        "src/bili_asr/storage/schema-observations.sql",
+        "src/bili_asr/storage/schema-source-sync.sql"
+      ],
+      "consumers": [
+        "archive_session",
+        "storage.snapshots",
+        "services.archive_migration"
+      ],
+      "capabilities": [
+        "runtime",
+        "snapshot",
+        "migration-target"
+      ],
+      "dependencies": [
+        "bilibili-v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "bilibili-migration-source/v1",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/storage/migration-source-bilibili-v1.json"
+      ],
+      "consumers": [
+        "storage.migration_source",
+        "services.archive_migration"
+      ],
+      "capabilities": [
+        "migration-source"
+      ],
+      "dependencies": [],
+      "schema": null
+    },
+    {
+      "identity": "preserved-body-import-v1",
+      "owner": "storage",
+      "authority": [
+        "src/bili_asr/storage/schema-preserved-body-import.sql"
+      ],
+      "consumers": [
+        "storage.import_origins",
+        "services.preserved_body_import",
+        "storage.snapshots"
+      ],
+      "capabilities": [
+        "extension",
+        "snapshot"
+      ],
+      "dependencies": [
+        "universal-v2"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "legacy-part-title-supplement-v1",
+      "owner": "sources",
+      "authority": [
+        "src/bili_asr/source_supplements.py",
+        "src/bili_asr/storage/schema-source-supplements.sql"
+      ],
+      "consumers": [
+        "storage.source_supplements",
+        "publication_origins",
+        "storage.snapshots"
+      ],
+      "capabilities": [
+        "extension",
+        "snapshot",
+        "export"
+      ],
+      "dependencies": [
+        "preserved-body-import-v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "legacy-frozen-facts-v1",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/content_policies.py",
+        "src/bili_asr/services/preserved_body_import.py"
+      ],
+      "consumers": [
+        "storage.import_origins",
+        "publication_origins"
+      ],
+      "capabilities": [
+        "content-upgrade",
+        "historical-read"
+      ],
+      "dependencies": [
+        "preserved-body-import-v1",
+        "publication-content/v1",
+        "publication-content/v2"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "stored-segments-webvtt/v1",
+      "owner": "transcripts",
+      "authority": [
+        "src/bili_asr/services/transcript_derivatives.py",
+        "src/bili_asr/cues.py"
+      ],
+      "consumers": [
+        "cli.archive"
+      ],
+      "capabilities": [
+        "derive",
+        "export"
+      ],
+      "dependencies": [],
+      "schema": null
+    },
+    {
+      "identity": "workflow-payload/v1",
+      "owner": "workflow",
+      "authority": [
+        "src/bili_asr/workflow_payloads.py"
+      ],
+      "consumers": [
+        "storage.workflow",
+        "workflow"
+      ],
+      "capabilities": [
+        "read",
+        "write"
+      ],
+      "dependencies": [],
+      "schema": null
+    },
+    {
+      "identity": "workflow-failure-policy/v1",
+      "owner": "workflow",
+      "authority": [
+        "src/bili_asr/workflow_failure_policy.py"
+      ],
+      "consumers": [
+        "services.workflow_retry",
+        "services.workflow_status",
+        "cli.workflow"
+      ],
+      "capabilities": [
+        "classify",
+        "retry-decision",
+        "historical-read"
+      ],
+      "dependencies": [
+        "workflow-payload/v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "workflow-failure-status/v1",
+      "owner": "workflow",
+      "authority": [
+        "src/bili_asr/services/workflow_status.py",
+        "src/bili_asr/storage/workflow_status.py"
+      ],
+      "consumers": [
+        "cli.workflow",
+        "operator-tools"
+      ],
+      "capabilities": [
+        "read",
+        "report",
+        "diagnostic"
+      ],
+      "dependencies": [
+        "workflow-failure-policy/v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "workflow-retry-control/v1",
+      "owner": "workflow",
+      "authority": [
+        "src/bili_asr/services/workflow_retry.py"
+      ],
+      "consumers": [
+        "cli.workflow",
+        "operator-tools"
+      ],
+      "capabilities": [
+        "read",
+        "validate",
+        "retry-decision"
+      ],
+      "dependencies": [
+        "workflow-failure-policy/v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "asr-profile/v2",
+      "owner": "workflow",
+      "authority": [
+        "src/bili_asr/workflow_models.py",
+        "src/bili_asr/storage/schema-workflow.sql"
+      ],
+      "consumers": [
+        "storage.workflow",
+        "workflow_runtime"
+      ],
+      "capabilities": [
+        "read",
+        "write"
+      ],
+      "dependencies": [],
+      "schema": null
+    },
+    {
+      "identity": "asr-evidence/v1",
+      "owner": "transcripts",
+      "authority": [
+        "src/bili_asr/storage/transcripts.py",
+        "src/bili_asr/storage/schema-transcripts.sql"
+      ],
+      "consumers": [
+        "storage.transcripts"
+      ],
+      "capabilities": [
+        "read",
+        "write"
+      ],
+      "dependencies": [],
+      "schema": null
+    },
+    {
+      "identity": "canonical-json/v1",
+      "owner": "identity",
+      "authority": [
+        "src/bili_asr/canonical_json.py"
+      ],
+      "consumers": [
+        "editorial",
+        "publication_identity",
+        "storage.migration_artifacts"
+      ],
+      "capabilities": [
+        "hash",
+        "historical-read"
+      ],
+      "dependencies": [],
+      "schema": null
+    },
+    {
+      "identity": "archive-bundle-v2",
+      "owner": "transcripts",
+      "authority": [
+        "src/bili_asr/artifacts.py"
+      ],
+      "consumers": [
+        "archive",
+        "services.bundle_verification",
+        "services.archive_snapshot"
+      ],
+      "capabilities": [
+        "read",
+        "write"
+      ],
+      "dependencies": [],
+      "schema": null
+    },
+    {
+      "identity": "archive-bundle-v3",
+      "owner": "transcripts",
+      "authority": [
+        "src/bili_asr/artifacts.py",
+        "src/bili_asr/archive.py"
+      ],
+      "consumers": [
+        "archive",
+        "services.bundle_verification",
+        "services.archive_snapshot"
+      ],
+      "capabilities": [
+        "read",
+        "write"
+      ],
+      "dependencies": [
+        "archive-bundle-v2",
+        "source-metadata/v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "frozen-input/v1",
+      "owner": "editorial",
+      "authority": [
+        "src/bili_asr/editorial.py",
+        "src/bili_asr/storage/migration_artifacts.py"
+      ],
+      "consumers": [
+        "storage.editorial",
+        "manuscript_templates"
+      ],
+      "capabilities": [
+        "historical-read",
+        "write"
+      ],
+      "dependencies": [
+        "canonical-json/v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "frozen-input/v2",
+      "owner": "editorial",
+      "authority": [
+        "src/bili_asr/storage/editorial.py"
+      ],
+      "consumers": [
+        "editorial_runtime",
+        "publication_content_v2"
+      ],
+      "capabilities": [
+        "read",
+        "write"
+      ],
+      "dependencies": [
+        "universal-v2",
+        "canonical-json/v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "publication-content/v1",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/publication_content.py"
+      ],
+      "consumers": [
+        "storage.publication",
+        "publication_export"
+      ],
+      "capabilities": [
+        "historical-read",
+        "write"
+      ],
+      "dependencies": [
+        "canonical-json/v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "publication-content/v2",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/publication_content_v2.py"
+      ],
+      "consumers": [
+        "storage.publication",
+        "publication_export"
+      ],
+      "capabilities": [
+        "read",
+        "write"
+      ],
+      "dependencies": [
+        "universal-v2",
+        "canonical-json/v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "ai-draft-v1",
+      "owner": "editorial",
+      "authority": [
+        "src/bili_asr/manuscript_templates.py"
+      ],
+      "consumers": [
+        "storage.editorial",
+        "storage.migration_artifacts"
+      ],
+      "capabilities": [
+        "render",
+        "historical-read"
+      ],
+      "dependencies": [
+        "frozen-input/v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "ai-draft-v2",
+      "owner": "editorial",
+      "authority": [
+        "src/bili_asr/publication_content_v2.py"
+      ],
+      "consumers": [
+        "manuscript_templates"
+      ],
+      "capabilities": [
+        "render"
+      ],
+      "dependencies": [
+        "frozen-input/v2"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "publish-v1",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/manuscript_templates.py"
+      ],
+      "consumers": [
+        "publication_identity",
+        "storage.migration_artifacts"
+      ],
+      "capabilities": [
+        "render",
+        "historical-read"
+      ],
+      "dependencies": [
+        "publication-content/v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "publish-v2",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/publication_content_v2.py"
+      ],
+      "consumers": [
+        "publication",
+        "publication_export"
+      ],
+      "capabilities": [
+        "render"
+      ],
+      "dependencies": [
+        "publication-content/v2"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "archive-snapshot/v1",
+      "owner": "archive",
+      "authority": [
+        "src/bili_asr/services/snapshot_protocol.py",
+        "src/bili_asr/services/archive_snapshot.py"
+      ],
+      "consumers": [
+        "services.archive_snapshot",
+        "services.archive_recovery"
+      ],
+      "capabilities": [
+        "save",
+        "check",
+        "restore"
+      ],
+      "dependencies": [],
+      "schema": null
+    },
+    {
+      "identity": "source-metadata/v1",
+      "owner": "sources",
+      "authority": [
+        "src/bili_asr/contracts/schemas/source-metadata-v1.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [],
+      "schema": "source-metadata-v1.schema.json"
+    },
+    {
+      "identity": "youtube-source-fields/v1",
+      "owner": "sources",
+      "authority": [
+        "src/bili_asr/storage/source_projection.py"
+      ],
+      "consumers": [
+        "storage.sources",
+        "storage.metadata",
+        "search_index.source_store"
+      ],
+      "capabilities": [
+        "write",
+        "read"
+      ],
+      "dependencies": [
+        "universal-v2",
+        "source-observations/v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "source-metadata/v2",
+      "owner": "sources",
+      "authority": [
+        "src/bili_asr/contracts/schemas/source-metadata-v2.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [
+        "source-metadata/v1"
+      ],
+      "schema": "source-metadata-v2.schema.json"
+    },
+    {
+      "identity": "publication-catalog/v2",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/publication-catalog.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [
+        "publish-v1"
+      ],
+      "schema": "publication-catalog.schema.json"
+    },
+    {
+      "identity": "publication-draft-catalog/v2",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/publication-draft-catalog.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [],
+      "schema": "publication-draft-catalog.schema.json"
+    },
+    {
+      "identity": "publication-catalog/v3",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/publication-catalog-v3.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [
+        "publication-catalog/v2",
+        "source-metadata/v1",
+        "publish-v2"
+      ],
+      "schema": "publication-catalog-v3.schema.json"
+    },
+    {
+      "identity": "publication-draft-catalog/v3",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/publication-draft-catalog-v3.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [
+        "publication-draft-catalog/v2",
+        "source-metadata/v1"
+      ],
+      "schema": "publication-draft-catalog-v3.schema.json"
+    },
+    {
+      "identity": "publication-catalog/v4",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/publication-catalog-v4.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [
+        "publication-catalog/v3",
+        "source-metadata/v2"
+      ],
+      "schema": "publication-catalog-v4.schema.json"
+    },
+    {
+      "identity": "publication-draft-catalog/v4",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/publication-draft-catalog-v4.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [
+        "publication-draft-catalog/v3",
+        "source-metadata/v2"
+      ],
+      "schema": "publication-draft-catalog-v4.schema.json"
+    },
+    {
+      "identity": "publication-export-manifest/v1",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/publication-export-manifest.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [],
+      "schema": "publication-export-manifest.schema.json"
+    },
+    {
+      "identity": "publication-draft-export-manifest/v1",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/publication-draft-export-manifest.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [],
+      "schema": "publication-draft-export-manifest.schema.json"
+    },
+    {
+      "identity": "content-rights/v1",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/content-rights.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [],
+      "schema": "content-rights.schema.json"
+    },
+    {
+      "identity": "publication-origin-manifest/v2",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/publication-origin-manifest-v2.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [
+        "universal-origin-v1"
+      ],
+      "schema": "publication-origin-manifest-v2.schema.json"
+    },
+    {
+      "identity": "universal-origin-v1",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/publication-origins-v1.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [
+        "publication-content/v2",
+        "legacy-part-title-supplement-v1"
+      ],
+      "schema": "publication-origins-v1.schema.json"
+    },
+    {
+      "identity": "universal-origin-v2",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/publication-origins-v2.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [
+        "universal-origin-v1",
+        "legacy-description-supplement-v1"
+      ],
+      "schema": "publication-origins-v2.schema.json"
+    },
+    {
+      "identity": "publication-origin-manifest/v3",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/publication-origin-manifest-v3.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [
+        "universal-origin-v2"
+      ],
+      "schema": "publication-origin-manifest-v3.schema.json"
+    },
+    {
+      "identity": "legacy-description-supplement-v1",
+      "owner": "sources",
+      "authority": [
+        "src/bili_asr/source_supplements.py",
+        "src/bili_asr/contracts/content_policies.py"
+      ],
+      "consumers": [
+        "storage.source_supplements",
+        "publication_origins"
+      ],
+      "capabilities": [
+        "content-upgrade",
+        "export"
+      ],
+      "dependencies": [
+        "legacy-part-title-supplement-v1"
+      ],
+      "schema": null
+    },
+    {
+      "identity": "editorial-export-manifest/v1",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/editorial-export-manifest.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [],
+      "schema": "editorial-export-manifest.schema.json"
+    },
+    {
+      "identity": "editorial-import-export-manifest/v1",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/editorial-import-export-manifest.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [
+        "preserved-body-import-v1",
+        "editorial-export-manifest/v1"
+      ],
+      "schema": "editorial-import-export-manifest.schema.json"
+    },
+    {
+      "identity": "editorial-review/v1",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/editorial-review.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [],
+      "schema": "editorial-review.schema.json"
+    },
+    {
+      "identity": "editorial-source-lineage/v1",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/editorial-source-lineage-v1.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [],
+      "schema": "editorial-source-lineage-v1.schema.json"
+    },
+    {
+      "identity": "editorial-issue-review/v1",
+      "owner": "editorial",
+      "authority": [
+        "src/bili_asr/contracts/schemas/editorial-issue-review-v1.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [],
+      "schema": "editorial-issue-review-v1.schema.json"
+    },
+    {
+      "identity": "editorial-sample-evidence/v1",
+      "owner": "editorial",
+      "authority": [
+        "src/bili_asr/contracts/schemas/editorial-sample-evidence-v1.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [
+        "editorial-source-lineage/v1",
+        "editorial-issue-review/v1"
+      ],
+      "schema": "editorial-sample-evidence-v1.schema.json"
+    },
+    {
+      "identity": "editorial-review-universal/v1",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/editorial-review-universal.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [
+        "ai-draft-v2"
+      ],
+      "schema": "editorial-review-universal.schema.json"
+    },
+    {
+      "identity": "publication-series/v1",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/publication-series.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [],
+      "schema": "publication-series.schema.json"
+    },
+    {
+      "identity": "publication-series-editorial/v1",
+      "owner": "publication",
+      "authority": [
+        "src/bili_asr/contracts/schemas/publication-series-editorial.schema.json"
+      ],
+      "consumers": [
+        "export_snapshot",
+        "external-reader"
+      ],
+      "capabilities": [
+        "validate",
+        "export"
+      ],
+      "dependencies": [],
+      "schema": "publication-series-editorial.schema.json"
+    },
+    {
+      "identity": "production-acceptance/v1",
+      "owner": "operations",
+      "authority": [
+        "src/bili_asr/production_acceptance.py",
+        "src/bili_asr/contracts/schemas/production-acceptance-v1.schema.json"
+      ],
+      "consumers": [
+        "cli.production_acceptance",
+        "operator-tools"
+      ],
+      "capabilities": [
+        "validate",
+        "record",
+        "verify",
+        "show"
+      ],
+      "dependencies": [],
+      "schema": "production-acceptance-v1.schema.json"
+    },
+    {
+      "identity": "production-acceptance-input/v1",
+      "owner": "operations",
+      "authority": [
+        "src/bili_asr/production_acceptance.py",
+        "src/bili_asr/contracts/schemas/production-acceptance-input-v1.schema.json"
+      ],
+      "consumers": [
+        "cli.production_acceptance",
+        "operator-tools"
+      ],
+      "capabilities": [
+        "validate",
+        "record"
+      ],
+      "dependencies": [],
+      "schema": "production-acceptance-input-v1.schema.json"
+    }
+  ],
+  "upgrades": [
+    {
+      "identity": "bilibili-to-universal/v1",
+      "source": [
+        "bilibili-v1"
+      ],
+      "target": [
+        "universal-v2"
+      ],
+      "converter": "legacy-migrate",
+      "revision": 1,
+      "authority": [
+        "services/archive_migration.py",
+        "storage/archive_contracts.py"
+      ],
+      "source_reader": "bilibili-migration-source/v1",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "neutral-source-mapping",
+        "frozen-version-registration",
+        "migration-audit"
+      ],
+      "sample": "tests/fixtures/data/bilibili-v1-frozen.zip",
+      "reversible": false
+    },
+    {
+      "identity": "preserved-body-extension/v1",
+      "source": [
+        "universal-v2"
+      ],
+      "target": [
+        "universal-v2",
+        "preserved-body-import-v1"
+      ],
+      "converter": "install-preserved-body",
+      "revision": 1,
+      "authority": [
+        "services/preserved_body_import.py",
+        "storage/schema-preserved-body-import.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_archive_upgrade.py",
+      "reversible": false
+    },
+    {
+      "identity": "source-supplement-extension/v1",
+      "source": [
+        "universal-v2",
+        "preserved-body-import-v1"
+      ],
+      "target": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "legacy-part-title-supplement-v1"
+      ],
+      "converter": "install-source-supplement",
+      "revision": 1,
+      "authority": [
+        "services/source_supplement.py",
+        "storage/schema-source-supplements.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_archive_upgrade.py",
+      "reversible": false
+    },
+    {
+      "identity": "artifact-storage-native/v1",
+      "source": [
+        "universal-v2"
+      ],
+      "target": [
+        "universal-v2",
+        "artifact-storage-v1"
+      ],
+      "converter": "install-artifact-storage",
+      "revision": 1,
+      "authority": [
+        "services/artifact_catalog_upgrade.py",
+        "storage/schema-artifact-storage.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "artifact-object-and-replica-backfill"
+      ],
+      "sample": "tests/test_archive_upgrade.py",
+      "reversible": false
+    },
+    {
+      "identity": "artifact-storage-preserved/v1",
+      "source": [
+        "universal-v2",
+        "preserved-body-import-v1"
+      ],
+      "target": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "artifact-storage-v1"
+      ],
+      "converter": "install-artifact-storage",
+      "revision": 1,
+      "authority": [
+        "services/artifact_catalog_upgrade.py",
+        "storage/schema-artifact-storage.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "artifact-object-and-replica-backfill"
+      ],
+      "sample": "tests/test_archive_upgrade.py",
+      "reversible": false
+    },
+    {
+      "identity": "artifact-storage-supplemented/v1",
+      "source": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "legacy-part-title-supplement-v1"
+      ],
+      "target": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "legacy-part-title-supplement-v1",
+        "artifact-storage-v1"
+      ],
+      "converter": "install-artifact-storage",
+      "revision": 1,
+      "authority": [
+        "services/artifact_catalog_upgrade.py",
+        "storage/schema-artifact-storage.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "artifact-object-and-replica-backfill"
+      ],
+      "sample": "tests/test_archive_upgrade.py",
+      "reversible": false
+    },
+    {
+      "identity": "artifact-online-native/v1",
+      "source": [
+        "universal-v2",
+        "artifact-storage-v1"
+      ],
+      "target": [
+        "universal-v2",
+        "artifact-storage-v1",
+        "artifact-online-v1"
+      ],
+      "converter": "install-artifact-online",
+      "revision": 1,
+      "authority": [
+        "storage/artifact_online.py",
+        "storage/schema-artifact-online.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_archive_upgrade.py",
+      "reversible": false
+    },
+    {
+      "identity": "artifact-online-preserved/v1",
+      "source": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "artifact-storage-v1"
+      ],
+      "target": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "artifact-storage-v1",
+        "artifact-online-v1"
+      ],
+      "converter": "install-artifact-online",
+      "revision": 1,
+      "authority": [
+        "storage/artifact_online.py",
+        "storage/schema-artifact-online.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_archive_upgrade.py",
+      "reversible": false
+    },
+    {
+      "identity": "artifact-online-supplemented/v1",
+      "source": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "legacy-part-title-supplement-v1",
+        "artifact-storage-v1"
+      ],
+      "target": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "legacy-part-title-supplement-v1",
+        "artifact-storage-v1",
+        "artifact-online-v1"
+      ],
+      "converter": "install-artifact-online",
+      "revision": 1,
+      "authority": [
+        "storage/artifact_online.py",
+        "storage/schema-artifact-online.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_archive_upgrade.py",
+      "reversible": false
+    },
+    {
+      "identity": "source-observations-universal-v2/v1",
+      "source": [
+        "universal-v2"
+      ],
+      "target": [
+        "universal-v2",
+        "source-observations/v1"
+      ],
+      "converter": "install-source-observations",
+      "revision": 1,
+      "authority": [
+        "storage/source_observations.py",
+        "storage/schema-source-observations.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_source_observations.py",
+      "reversible": false
+    },
+    {
+      "identity": "source-observations-universal-v2-preserved-body-import-v1/v1",
+      "source": [
+        "universal-v2",
+        "preserved-body-import-v1"
+      ],
+      "target": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "source-observations/v1"
+      ],
+      "converter": "install-source-observations",
+      "revision": 1,
+      "authority": [
+        "storage/source_observations.py",
+        "storage/schema-source-observations.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_source_observations.py",
+      "reversible": false
+    },
+    {
+      "identity": "source-observations-universal-v2-preserved-body-import-v1-legacy-part-title-supplement-v1/v1",
+      "source": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "legacy-part-title-supplement-v1"
+      ],
+      "target": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "legacy-part-title-supplement-v1",
+        "source-observations/v1"
+      ],
+      "converter": "install-source-observations",
+      "revision": 1,
+      "authority": [
+        "storage/source_observations.py",
+        "storage/schema-source-observations.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_source_observations.py",
+      "reversible": false
+    },
+    {
+      "identity": "source-observations-universal-v2-artifact-storage-v1/v1",
+      "source": [
+        "universal-v2",
+        "artifact-storage-v1"
+      ],
+      "target": [
+        "universal-v2",
+        "artifact-storage-v1",
+        "source-observations/v1"
+      ],
+      "converter": "install-source-observations",
+      "revision": 1,
+      "authority": [
+        "storage/source_observations.py",
+        "storage/schema-source-observations.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_source_observations.py",
+      "reversible": false
+    },
+    {
+      "identity": "source-observations-universal-v2-preserved-body-import-v1-artifact-storage-v1/v1",
+      "source": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "artifact-storage-v1"
+      ],
+      "target": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "artifact-storage-v1",
+        "source-observations/v1"
+      ],
+      "converter": "install-source-observations",
+      "revision": 1,
+      "authority": [
+        "storage/source_observations.py",
+        "storage/schema-source-observations.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_source_observations.py",
+      "reversible": false
+    },
+    {
+      "identity": "source-observations-universal-v2-preserved-body-import-v1-legacy-part-title-supplement-v1-artifact-storage-v1/v1",
+      "source": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "legacy-part-title-supplement-v1",
+        "artifact-storage-v1"
+      ],
+      "target": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "legacy-part-title-supplement-v1",
+        "artifact-storage-v1",
+        "source-observations/v1"
+      ],
+      "converter": "install-source-observations",
+      "revision": 1,
+      "authority": [
+        "storage/source_observations.py",
+        "storage/schema-source-observations.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_source_observations.py",
+      "reversible": false
+    },
+    {
+      "identity": "source-observations-universal-v2-artifact-storage-v1-artifact-online-v1/v1",
+      "source": [
+        "universal-v2",
+        "artifact-storage-v1",
+        "artifact-online-v1"
+      ],
+      "target": [
+        "universal-v2",
+        "artifact-storage-v1",
+        "artifact-online-v1",
+        "source-observations/v1"
+      ],
+      "converter": "install-source-observations",
+      "revision": 1,
+      "authority": [
+        "storage/source_observations.py",
+        "storage/schema-source-observations.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_source_observations.py",
+      "reversible": false
+    },
+    {
+      "identity": "source-observations-universal-v2-preserved-body-import-v1-artifact-storage-v1-artifact-online-v1/v1",
+      "source": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "artifact-storage-v1",
+        "artifact-online-v1"
+      ],
+      "target": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "artifact-storage-v1",
+        "artifact-online-v1",
+        "source-observations/v1"
+      ],
+      "converter": "install-source-observations",
+      "revision": 1,
+      "authority": [
+        "storage/source_observations.py",
+        "storage/schema-source-observations.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_source_observations.py",
+      "reversible": false
+    },
+    {
+      "identity": "source-observations-universal-v2-preserved-body-import-v1-legacy-part-title-supplement-v1-artifact-storage-v1-artifact-online-v1/v1",
+      "source": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "legacy-part-title-supplement-v1",
+        "artifact-storage-v1",
+        "artifact-online-v1"
+      ],
+      "target": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "legacy-part-title-supplement-v1",
+        "artifact-storage-v1",
+        "artifact-online-v1",
+        "source-observations/v1"
+      ],
+      "converter": "install-source-observations",
+      "revision": 1,
+      "authority": [
+        "storage/source_observations.py",
+        "storage/schema-source-observations.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_source_observations.py",
+      "reversible": false
+    },
+    {
+      "identity": "artifact-storage-native/v1-with-observations",
+      "source": [
+        "universal-v2",
+        "source-observations/v1"
+      ],
+      "target": [
+        "universal-v2",
+        "artifact-storage-v1",
+        "source-observations/v1"
+      ],
+      "converter": "install-artifact-storage",
+      "revision": 1,
+      "authority": [
+        "services/artifact_catalog_upgrade.py",
+        "storage/schema-artifact-storage.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "artifact-object-and-replica-backfill"
+      ],
+      "sample": "tests/test_source_observations.py",
+      "reversible": false
+    },
+    {
+      "identity": "artifact-storage-preserved/v1-with-observations",
+      "source": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "source-observations/v1"
+      ],
+      "target": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "artifact-storage-v1",
+        "source-observations/v1"
+      ],
+      "converter": "install-artifact-storage",
+      "revision": 1,
+      "authority": [
+        "services/artifact_catalog_upgrade.py",
+        "storage/schema-artifact-storage.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "artifact-object-and-replica-backfill"
+      ],
+      "sample": "tests/test_source_observations.py",
+      "reversible": false
+    },
+    {
+      "identity": "artifact-storage-supplemented/v1-with-observations",
+      "source": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "legacy-part-title-supplement-v1",
+        "source-observations/v1"
+      ],
+      "target": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "legacy-part-title-supplement-v1",
+        "artifact-storage-v1",
+        "source-observations/v1"
+      ],
+      "converter": "install-artifact-storage",
+      "revision": 1,
+      "authority": [
+        "services/artifact_catalog_upgrade.py",
+        "storage/schema-artifact-storage.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "artifact-object-and-replica-backfill"
+      ],
+      "sample": "tests/test_source_observations.py",
+      "reversible": false
+    },
+    {
+      "identity": "artifact-online-native/v1-with-observations",
+      "source": [
+        "universal-v2",
+        "artifact-storage-v1",
+        "source-observations/v1"
+      ],
+      "target": [
+        "universal-v2",
+        "artifact-storage-v1",
+        "artifact-online-v1",
+        "source-observations/v1"
+      ],
+      "converter": "install-artifact-online",
+      "revision": 1,
+      "authority": [
+        "storage/artifact_online.py",
+        "storage/schema-artifact-online.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_source_observations.py",
+      "reversible": false
+    },
+    {
+      "identity": "artifact-online-preserved/v1-with-observations",
+      "source": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "artifact-storage-v1",
+        "source-observations/v1"
+      ],
+      "target": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "artifact-storage-v1",
+        "artifact-online-v1",
+        "source-observations/v1"
+      ],
+      "converter": "install-artifact-online",
+      "revision": 1,
+      "authority": [
+        "storage/artifact_online.py",
+        "storage/schema-artifact-online.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_source_observations.py",
+      "reversible": false
+    },
+    {
+      "identity": "artifact-online-supplemented/v1-with-observations",
+      "source": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "legacy-part-title-supplement-v1",
+        "artifact-storage-v1",
+        "source-observations/v1"
+      ],
+      "target": [
+        "universal-v2",
+        "preserved-body-import-v1",
+        "legacy-part-title-supplement-v1",
+        "artifact-storage-v1",
+        "artifact-online-v1",
+        "source-observations/v1"
+      ],
+      "converter": "install-artifact-online",
+      "revision": 1,
+      "authority": [
+        "storage/artifact_online.py",
+        "storage/schema-artifact-online.sql"
+      ],
+      "source_reader": "snapshot-database",
+      "target_validator": "snapshot-database",
+      "allowed_changes": [
+        "empty-extension-tables"
+      ],
+      "sample": "tests/test_source_observations.py",
+      "reversible": false
+    }
+  ],
+  "content_policies": [
+    {
+      "identity": "legacy-frozen-facts-v1",
+      "source_content": [
+        "publication-content/v1",
+        "frozen-input/v1"
+      ],
+      "target_content": "publication-content/v2",
+      "body_rule": "selected-body-utf8-identical",
+      "review_status": "pending-review",
+      "release_rule": "preserve-current-release",
+      "field_kinds": [
+        [
+          "aid",
+          "unobserved"
+        ],
+        [
+          "categoryId",
+          "unobserved"
+        ],
+        [
+          "coverUrl",
+          "unobserved"
+        ],
+        [
+          "creatorId",
+          "unobserved"
+        ],
+        [
+          "creatorName",
+          "unobserved"
+        ],
+        [
+          "description",
+          "unobserved"
+        ],
+        [
+          "durationMs",
+          "unobserved"
+        ],
+        [
+          "externalVideoId",
+          "legacy-input"
+        ],
+        [
+          "metadataObservedAt",
+          "unobserved"
+        ],
+        [
+          "partIndex",
+          "legacy-input"
+        ],
+        [
+          "partTitle",
+          "unobserved"
+        ],
+        [
+          "platform",
+          "legacy-input"
+        ],
+        [
+          "pubdateUnix",
+          "unobserved"
+        ],
+        [
+          "sourcePublishedAt",
+          "unobserved"
+        ],
+        [
+          "tags",
+          "unobserved"
+        ],
+        [
+          "title",
+          "legacy-input"
+        ],
+        [
+          "version",
+          "legacy-input"
+        ]
+      ],
+      "consumer_profile": "universal-origin-v1",
+      "converter": "services.preserved_body_import",
+      "sample": "tests/test_preserved_body_import.py"
+    },
+    {
+      "identity": "legacy-part-title-supplement-v1",
+      "source_content": [
+        "publication-content/v2",
+        "legacy-frozen-facts-v1"
+      ],
+      "target_content": "publication-content/v2",
+      "body_rule": "parent-body-utf8-identical",
+      "review_status": "pending-review",
+      "release_rule": "preserve-current-release",
+      "field_kinds": [
+        [
+          "aid",
+          "unobserved"
+        ],
+        [
+          "categoryId",
+          "unobserved"
+        ],
+        [
+          "coverUrl",
+          "unobserved"
+        ],
+        [
+          "creatorId",
+          "unobserved"
+        ],
+        [
+          "creatorName",
+          "unobserved"
+        ],
+        [
+          "description",
+          "unobserved"
+        ],
+        [
+          "durationMs",
+          "unobserved"
+        ],
+        [
+          "externalVideoId",
+          "legacy-input"
+        ],
+        [
+          "metadataObservedAt",
+          "unobserved"
+        ],
+        [
+          "partIndex",
+          "legacy-input"
+        ],
+        [
+          "partTitle",
+          "archive-part-projection"
+        ],
+        [
+          "platform",
+          "legacy-input"
+        ],
+        [
+          "pubdateUnix",
+          "unobserved"
+        ],
+        [
+          "sourcePublishedAt",
+          "unobserved"
+        ],
+        [
+          "tags",
+          "unobserved"
+        ],
+        [
+          "title",
+          "legacy-input"
+        ],
+        [
+          "version",
+          "legacy-input"
+        ]
+      ],
+      "consumer_profile": "universal-origin-v1",
+      "converter": "services.source_supplement",
+      "sample": "tests/test_source_supplement.py"
+    },
+    {
+      "identity": "legacy-description-supplement-v1",
+      "source_content": [
+        "publication-content/v2",
+        "legacy-frozen-facts-v1"
+      ],
+      "target_content": "publication-content/v2",
+      "body_rule": "parent-body-utf8-identical",
+      "review_status": "pending-review",
+      "release_rule": "preserve-current-release",
+      "field_kinds": [
+        [
+          "aid",
+          "unobserved"
+        ],
+        [
+          "categoryId",
+          "unobserved"
+        ],
+        [
+          "coverUrl",
+          "unobserved"
+        ],
+        [
+          "creatorId",
+          "unobserved"
+        ],
+        [
+          "creatorName",
+          "unobserved"
+        ],
+        [
+          "description",
+          "archive-video-details-projection"
+        ],
+        [
+          "durationMs",
+          "unobserved"
+        ],
+        [
+          "externalVideoId",
+          "legacy-input"
+        ],
+        [
+          "metadataObservedAt",
+          "unobserved"
+        ],
+        [
+          "partIndex",
+          "legacy-input"
+        ],
+        [
+          "partTitle",
+          "unobserved"
+        ],
+        [
+          "platform",
+          "legacy-input"
+        ],
+        [
+          "pubdateUnix",
+          "unobserved"
+        ],
+        [
+          "sourcePublishedAt",
+          "unobserved"
+        ],
+        [
+          "tags",
+          "unobserved"
+        ],
+        [
+          "title",
+          "legacy-input"
+        ],
+        [
+          "version",
+          "legacy-input"
+        ]
+      ],
+      "consumer_profile": "universal-origin-v2",
+      "converter": "services.source_supplement",
+      "sample": "tests/test_description_supplement.py"
+    }
+  ],
+  "release_acceptance": {
+    "frozen_files": [
+      {
+        "path": "tests/fixtures/data/bilibili-v1-frozen.zip",
+        "sha256": "20790dfc0acec3dda5707cb534907374c458f99b04f1947dc865ffe67b93770b"
+      },
+      {
+        "path": "tests/fixtures/data/bilibili-v1-frozen.json",
+        "sha256": "2e2d67cac953c115d541e210cd663c91adc07327ff3c158947eb0e9621849844"
+      },
+      {
+        "path": "tests/fixtures/data/contracts-release-baseline-v1.json",
+        "sha256": "7ea6da1930354dbb5e871ae84828b189138d88a2b1467c33edd75174913f194e"
+      }
+    ],
+    "baseline": "tests/fixtures/data/contracts-release-baseline-v1.json",
+    "required_tests": [
+      "tests/test_installed_cli.py::test_installed_contract_resources_resolve_offline_outside_checkout",
+      "tests/test_installed_cli.py::test_installed_contract_authorities_include_registered_sql_and_json",
+      "tests/test_upgrade_result_reuse.py::test_formal_upgrade_reuses_completed_ai_jobs_and_preserves_pending_work",
+      "tests/test_upgrade_result_reuse.py::test_explicit_refresh_or_changed_configuration_creates_current_input",
+      "tests/test_upgrade_result_reuse.py::test_upgrade_keeps_committed_chunks_and_only_explicit_retry_runs_missing_chunks",
+      "tests/test_upgrade_result_reuse.py::test_replanning_does_not_revive_terminal_historical_editorial_job[failed]",
+      "tests/test_upgrade_result_reuse.py::test_replanning_does_not_revive_terminal_historical_editorial_job[cancelled]",
+      "tests/test_content_upgrade_policies.py::test_formal_upgrade_and_registered_content_conversion_keep_original_review_and_body",
+      "tests/test_source_supplement.py::test_title_only_change_preserves_current_human_edits_and_historical_ai",
+      "tests/test_source_supplement.py::test_export_pair_and_snapshot_restore_keep_title_evidence",
+      "tests/test_archive_upgrade.py::test_frozen_legacy_upgrades_all_registered_combinations_and_snapshots[native]",
+      "tests/test_archive_upgrade.py::test_frozen_legacy_upgrades_all_registered_combinations_and_snapshots[preserved]",
+      "tests/test_archive_upgrade.py::test_frozen_legacy_upgrades_all_registered_combinations_and_snapshots[supplemented]"
+    ],
+    "upgrades": [
+      {
+        "edge": "bilibili-to-universal/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_archive_upgrade.py::test_frozen_legacy_upgrades_all_registered_combinations_and_snapshots[native]",
+          "tests/test_archive_upgrade.py::test_changed_or_invalid_inputs_fail_before_target_install"
+        ]
+      },
+      {
+        "edge": "preserved-body-extension/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_archive_upgrade.py::test_frozen_legacy_upgrades_all_registered_combinations_and_snapshots[preserved]",
+          "tests/test_archive_upgrade.py::test_changed_or_invalid_inputs_fail_before_target_install"
+        ]
+      },
+      {
+        "edge": "source-supplement-extension/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_archive_upgrade.py::test_frozen_legacy_upgrades_all_registered_combinations_and_snapshots[supplemented]",
+          "tests/test_archive_upgrade.py::test_changed_or_invalid_inputs_fail_before_target_install"
+        ]
+      },
+      {
+        "edge": "artifact-storage-native/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_archive_upgrade.py::test_artifact_catalog_is_reachable_from_each_actual_universal_combination[stored-historical-native]",
+          "tests/test_archive_upgrade.py::test_artifact_catalog_is_reachable_from_each_actual_universal_combination[stored-native-native]"
+        ]
+      },
+      {
+        "edge": "artifact-storage-preserved/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_archive_upgrade.py::test_artifact_catalog_is_reachable_from_each_actual_universal_combination[stored-historical-preserved]",
+          "tests/test_archive_upgrade.py::test_artifact_catalog_is_reachable_from_each_actual_universal_combination[stored-native-preserved]"
+        ]
+      },
+      {
+        "edge": "artifact-storage-supplemented/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_archive_upgrade.py::test_artifact_catalog_is_reachable_from_each_actual_universal_combination[stored-historical-supplemented]",
+          "tests/test_archive_upgrade.py::test_artifact_catalog_is_reachable_from_each_actual_universal_combination[stored-native-supplemented]"
+        ]
+      },
+      {
+        "edge": "artifact-online-native/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_archive_upgrade.py::test_artifact_catalog_is_reachable_from_each_actual_universal_combination[online-historical-native]",
+          "tests/test_archive_upgrade.py::test_artifact_catalog_is_reachable_from_each_actual_universal_combination[online-native-native]"
+        ]
+      },
+      {
+        "edge": "artifact-online-preserved/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_archive_upgrade.py::test_artifact_catalog_is_reachable_from_each_actual_universal_combination[online-historical-preserved]",
+          "tests/test_archive_upgrade.py::test_artifact_catalog_is_reachable_from_each_actual_universal_combination[online-native-preserved]"
+        ]
+      },
+      {
+        "edge": "artifact-online-supplemented/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_archive_upgrade.py::test_artifact_catalog_is_reachable_from_each_actual_universal_combination[online-historical-supplemented]",
+          "tests/test_archive_upgrade.py::test_artifact_catalog_is_reachable_from_each_actual_universal_combination[online-native-supplemented]"
+        ]
+      },
+      {
+        "edge": "source-observations-universal-v2/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_source_observations.py::test_explicit_upgrade_preserves_history_and_raw_observations"
+        ]
+      },
+      {
+        "edge": "source-observations-universal-v2-preserved-body-import-v1/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_source_observations.py::test_explicit_upgrade_preserves_history_and_raw_observations"
+        ]
+      },
+      {
+        "edge": "source-observations-universal-v2-preserved-body-import-v1-legacy-part-title-supplement-v1/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_source_observations.py::test_explicit_upgrade_preserves_history_and_raw_observations"
+        ]
+      },
+      {
+        "edge": "source-observations-universal-v2-artifact-storage-v1/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_source_observations.py::test_explicit_upgrade_preserves_history_and_raw_observations"
+        ]
+      },
+      {
+        "edge": "source-observations-universal-v2-preserved-body-import-v1-artifact-storage-v1/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_source_observations.py::test_explicit_upgrade_preserves_history_and_raw_observations"
+        ]
+      },
+      {
+        "edge": "source-observations-universal-v2-preserved-body-import-v1-legacy-part-title-supplement-v1-artifact-storage-v1/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_source_observations.py::test_explicit_upgrade_preserves_history_and_raw_observations"
+        ]
+      },
+      {
+        "edge": "source-observations-universal-v2-artifact-storage-v1-artifact-online-v1/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_source_observations.py::test_explicit_upgrade_preserves_history_and_raw_observations"
+        ]
+      },
+      {
+        "edge": "source-observations-universal-v2-preserved-body-import-v1-artifact-storage-v1-artifact-online-v1/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_source_observations.py::test_explicit_upgrade_preserves_history_and_raw_observations"
+        ]
+      },
+      {
+        "edge": "source-observations-universal-v2-preserved-body-import-v1-legacy-part-title-supplement-v1-artifact-storage-v1-artifact-online-v1/v1",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_source_observations.py::test_explicit_upgrade_preserves_history_and_raw_observations"
+        ]
+      },
+      {
+        "edge": "artifact-storage-native/v1-with-observations",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_source_observations.py::test_explicit_upgrade_preserves_history_and_raw_observations"
+        ]
+      },
+      {
+        "edge": "artifact-storage-preserved/v1-with-observations",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_source_observations.py::test_explicit_upgrade_preserves_history_and_raw_observations"
+        ]
+      },
+      {
+        "edge": "artifact-storage-supplemented/v1-with-observations",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_source_observations.py::test_explicit_upgrade_preserves_history_and_raw_observations"
+        ]
+      },
+      {
+        "edge": "artifact-online-native/v1-with-observations",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_source_observations.py::test_explicit_upgrade_preserves_history_and_raw_observations"
+        ]
+      },
+      {
+        "edge": "artifact-online-preserved/v1-with-observations",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_source_observations.py::test_explicit_upgrade_preserves_history_and_raw_observations"
+        ]
+      },
+      {
+        "edge": "artifact-online-supplemented/v1-with-observations",
+        "frozen_files": [
+          "tests/fixtures/data/bilibili-v1-frozen.zip",
+          "tests/fixtures/data/bilibili-v1-frozen.json"
+        ],
+        "test_nodes": [
+          "tests/test_source_observations.py::test_explicit_upgrade_preserves_history_and_raw_observations"
+        ]
+      }
+    ],
+    "transitions": []
+  }
+}

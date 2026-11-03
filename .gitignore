@@ -1,0 +1,81 @@
+# Deprecated control-root artifacts
+/.mstar/
+/AGENTS.md
+/CONCEPTS.md
+/HANDOFF.md
+/pytest-of-*/
+/.archive.archive-maintenance.lock
+/verification-results/
+
+# Retired nested checkout residue
+/bilibili-asr-archive/
+
+# Operator data and model artifacts
+/archive/
+/archived/
+/models/
+/logs/
+/refactor/
+/design/
+*.m4a
+*.wav
+
+# Local environments and secrets
+/.env
+/.env.*
+!/.env.example
+/.venv/
+/.venv-*/
+/venv/
+
+# Python caches and tool state
+*.egg-info/
+__pycache__/
+*.py[cod]
+*.pyo
+/.pytest_cache/
+/.ruff_cache/
+/.mypy_cache/
+/.tox/
+
+# Test, fixture, and verifier scratch
+/.test-tmp/
+/.test-tmp-*/
+/.test-tmp-issues*.txt
+/.test-workflow-status/
+/.tb/
+/.pfx*/
+/.pydel*/
+/pip-*/
+/pytest-cache-files-*/
+/bili-asr-fixture-preflight-*/
+/.bili-asr-fixture-preflight-*/
+/bili-asr-verify-*/
+/.bili-asr-verify-*/
+/tmp*
+/.tmp/
+/.playwright-cli/
+/.tmp2/
+/pydiagout.txt
+/e2e-test*.md
+**/verify_acceptance.sh
+
+# Editor and workspace tooling
+*.swp
+*.swo
+/.worktrees/
+/.agent-teams/
+/.archify/
+*.delivery.json
+/design/
+/reading-site/
+
+# Offline dependency wheels for isolated installation tests
+.test-wheelhouse/
+
+# Local extraction validation results and generated packages
+/.*-results.txt
+/.*-test-results.txt
+/dist/
+/.coverage*
+/pytest-of-*/

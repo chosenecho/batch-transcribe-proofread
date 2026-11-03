@@ -1,0 +1,2 @@
+include LICENSE CONTENT-LICENSE.md THIRD_PARTY_NOTICES.md
+recursive-include src/bili_asr/storage *.sql *.json

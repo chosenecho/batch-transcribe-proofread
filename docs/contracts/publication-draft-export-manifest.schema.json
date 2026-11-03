@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Publication Draft Export Manifest Version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "manuscriptType", "snapshotId", "files"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "manuscriptType": {"const": "publication-draft-export"},
+    "snapshotId": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {"type": "string", "pattern": "^(catalog\\.json|content-rights\\.json|series\\.json|drafts/edition-[0-9a-f]{32}/(preview|review)\\.md)$"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    }
+  }
+}

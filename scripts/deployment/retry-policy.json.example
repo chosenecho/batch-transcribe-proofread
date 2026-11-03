@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "job_ids": [],
+  "part_ids": [],
+  "kinds": ["proofread"],
+  "retryable_errors": {"proofread": ["deepseek_transport_failed", "DeepSeekTransportError"]},
+  "max_retries": 2,
+  "delays_seconds": [0, 600],
+  "interval_seconds": 60
+}

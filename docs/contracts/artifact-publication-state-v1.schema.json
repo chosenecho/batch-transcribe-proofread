@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bili-asr.invalid/contracts/artifact-publication-state-v1",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "artifact-publication-state-v1"
+    },
+    "group_id": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "production": {
+      "const": "published"
+    },
+    "durability": {
+      "enum": [
+        "verified_group_recorded",
+        "incomplete"
+      ]
+    },
+    "locality": {
+      "enum": [
+        "local_complete",
+        "offloaded",
+        "missing"
+      ]
+    },
+    "readiness": {
+      "enum": [
+        "ready",
+        "restore_required",
+        "restore_blocked"
+      ]
+    },
+    "target_availability": {
+      "const": "unchecked"
+    },
+    "members": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "object_id": {
+            "type": "string",
+            "minLength": 64,
+            "maxLength": 64,
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "durability": {
+            "enum": [
+              "verified_replica_recorded",
+              "no_verified_replica"
+            ]
+          },
+          "verified_at": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "locality": {
+            "enum": [
+              "local_present",
+              "offloaded",
+              "missing"
+            ]
+          },
+          "readiness": {
+            "enum": [
+              "local_verification_required",
+              "storage_unavailable",
+              "restore_required",
+              "restore_blocked"
+            ]
+          },
+          "target_availability": {
+            "enum": [
+              "unchecked",
+              "reachable",
+              "storage_unavailable",
+              "not_applicable"
+            ]
+          }
+        },
+        "required": [
+          "object_id",
+          "durability",
+          "verified_at",
+          "locality",
+          "readiness",
+          "target_availability"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 6,
+      "maxItems": 6
+    }
+  },
+  "required": [
+    "schema",
+    "group_id",
+    "production",
+    "durability",
+    "locality",
+    "readiness",
+    "target_availability",
+    "members"
+  ],
+  "additionalProperties": false
+}

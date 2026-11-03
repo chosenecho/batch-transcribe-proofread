@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SuperCatQR/bilibili-asr-archive/docs/contracts/publication-catalog-v3.schema.json",
+  "title": "Publication Catalog Version 3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "manuscriptType",
+    "articles"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 3
+    },
+    "manuscriptType": {
+      "const": "publication"
+    },
+    "articles": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "publication-catalog.schema.json#/$defs/article"
+          },
+          {
+            "$ref": "#/$defs/universalArticle"
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "universalArticle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manuscriptType",
+        "slug",
+        "title",
+        "summary",
+        "tags",
+        "attribution",
+        "editorNote",
+        "releaseId",
+        "editionId",
+        "aiRevisionId",
+        "videoPartId",
+        "sourceUrl",
+        "contentSha256",
+        "artifactSha256",
+        "templateVersion",
+        "publishedAt",
+        "file",
+        "reviewFile",
+        "reviewArtifactSha256",
+        "platform",
+        "externalVideoId",
+        "partIndex",
+        "sourceMetadata",
+        "sourcePublishedAt",
+        "pubdateUnix",
+        "contentVersion"
+      ],
+      "properties": {
+        "manuscriptType": {
+          "const": "publication"
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^part-[1-9][0-9]*$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "attribution": {
+          "type": "string",
+          "minLength": 1
+        },
+        "editorNote": {
+          "type": "string"
+        },
+        "releaseId": {
+          "$ref": "#/$defs/sha256"
+        },
+        "editionId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "aiRevisionId": {
+          "$ref": "#/$defs/sha256"
+        },
+        "videoPartId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sourceUrl": {
+          "type": "string",
+          "pattern": "^https://(?:www\\.bilibili\\.com/video/[A-Za-z0-9_-]+/\\?p=[1-9][0-9]*|www\\.youtube\\.com/watch\\?v=[A-Za-z0-9_-]{11})$"
+        },
+        "contentSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "artifactSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "templateVersion": {
+          "const": "publish-v2"
+        },
+        "publishedAt": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Unix timestamp in seconds"
+        },
+        "file": {
+          "type": "string",
+          "pattern": "^articles/part-[1-9][0-9]*/publish\\.md$"
+        },
+        "reviewFile": {
+          "type": "string",
+          "pattern": "^articles/part-[1-9][0-9]*/review\\.md$"
+        },
+        "reviewArtifactSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "platform": {
+          "enum": [
+            "bilibili",
+            "youtube"
+          ]
+        },
+        "externalVideoId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "partIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sourceMetadata": {
+          "$ref": "source-metadata-v1.schema.json"
+        },
+        "sourcePublishedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+        },
+        "pubdateUnix": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 9223372036854776000
+        },
+        "contentVersion": {
+          "const": 2
+        }
+      }
+    }
+  },
+  "description": "Mixed catalog: historical content keeps its exact version-2 article shape; content-version 2 uses the universal shape. Also check canonical source/part/path equality, metadata identity, derived timestamps and file hashes."
+}

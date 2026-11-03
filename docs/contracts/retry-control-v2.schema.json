@@ -1,0 +1,263 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SuperCatQR/bilibili-asr-archive/docs/contracts/retry-control-v2.schema.json",
+  "title": "Scoped portable retry controls v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "schema_version",
+    "source",
+    "projection_sha256",
+    "content_sha256",
+    "archive_scope",
+    "clock",
+    "retry_holds",
+    "retry_ledger"
+  ],
+  "properties": {
+    "format": {
+      "const": "retry-control/v2"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 2
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "sha256"
+      ],
+      "properties": {
+        "format": {
+          "enum": [
+            "production-retry-state/unversioned",
+            "retry-control/v1",
+            "retry-control/v2"
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        }
+      }
+    },
+    "projection_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "archive_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "database_sha256",
+        "jobs"
+      ],
+      "properties": {
+        "database_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "jobs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "job_id",
+              "identity_sha256"
+            ],
+            "properties": {
+              "job_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.:-]{1,128}$",
+                "maxLength": 128
+              },
+              "identity_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$",
+                "minLength": 64,
+                "maxLength": 64
+              }
+            }
+          }
+        }
+      }
+    },
+    "clock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain",
+        "captured_at"
+      ],
+      "properties": {
+        "domain": {
+          "const": "unix-seconds-utc/v1"
+        },
+        "captured_at": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        }
+      }
+    },
+    "retry_holds": {
+      "type": "object",
+      "maxProperties": 50000,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_.:-]{1,128}$",
+        "maxLength": 128
+      },
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "reason"
+            ],
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              },
+              "source": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              },
+              "error_code": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              },
+              "investigation_ref": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              },
+              "repair_ref": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              },
+              "attempt_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              },
+              "held_at": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9223372036854775807
+              },
+              "created_at": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9223372036854775807
+              },
+              "updated_at": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9223372036854775807
+              },
+              "video_part_id": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9223372036854775807
+              },
+              "transcript_id": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9223372036854775807
+              },
+              "paused": {
+                "type": "boolean"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "retry_ledger": {
+      "type": "object",
+      "maxProperties": 50000,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_.:-]{1,128}$",
+        "maxLength": 128
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "retries",
+          "last_retry_at"
+        ],
+        "properties": {
+          "retries": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9223372036854775807
+          },
+          "last_retry_at": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9223372036854775807
+          },
+          "next_retry_at": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9223372036854775807
+          },
+          "max_retries": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9223372036854775807
+          },
+          "last_error_code": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.:-]{1,128}$",
+            "maxLength": 128
+          },
+          "reserved_attempt_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.:-]{1,128}$",
+            "maxLength": 128
+          },
+          "dispatch_outcome": {
+            "enum": [
+              "reserved",
+              "requeued",
+              "stale"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

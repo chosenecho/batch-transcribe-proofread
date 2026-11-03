@@ -1,0 +1,272 @@
+{
+  "files": {
+    "audio/BVpreserve.p0.m4a": "44b83312b2a4e7498a67c54cb7a19d5398acb82e46ffb067780b6f3ca10285b5",
+    "documents/part-1/2c6a9df34ac010732a53f243eed9aabb48710d672fe5ecacb8ee12e2e6df5966/ai-draft-v1/ai-draft.md": "e95363debed6dc06c6f793da472adf8c645710891a95319b08500a548659d515",
+    "documents/part-1/2c6a9df34ac010732a53f243eed9aabb48710d672fe5ecacb8ee12e2e6df5966/ai-draft-v1/review.md": "df6754d563b05d91927d84de202bbd5ebe0cf5dcc79b42ab7554ffb9ed40725f",
+    "documents/part-2/1daec813eabf8b1eb316f3bc899a4ed31c319e062808670df16d9c931aa8eb93/ai-draft-v1/ai-draft.md": "91a514147cfdd83d92acc02eade2830b987f9a42ab704bb5ca3a7486838df216",
+    "documents/part-2/1daec813eabf8b1eb316f3bc899a4ed31c319e062808670df16d9c931aa8eb93/ai-draft-v1/review.md": "de1f509463124edd79a69e3d8432bc7f54a2d0f055f39ca64e0db54defef9355",
+    "publications/part-1/bcf76dac7463489a263f36b67ce3075e5cf4b703550bb26801d2caa3c048d6c9/publish-v1/publish.md": "6904a7c6aae296ea7bb486476009c391f18771598226a3ce4b3f8e4a07c3a7b5",
+    "publications/part-1/ed97bc81542466a2dd653729ed0be3763a00a5cadfeed10317e26f4f9a2f8d35/publish-v1/publish.md": "3883d58e0fa780e8e5532556124dbb27b25f201559e21e0a7702749370196fb5",
+    "publications/part-1/f6d9c7786a63e6f100540d0ed2de0bbeb0e200b9b0dfad4bf1c216651f1fb5b4/publish-v1/publish.md": "8030f31d541646d7ae5a2fdb43beaa9e5e43df10800892b4c7313bda6622a553",
+    "subtitles/BVpreserve.p0.raw.json": "0692a76dd7889b5316b8a4f3a4f5c22ab9fbadcb9545a22b868160855c2ba880",
+    "transcripts/BVpreserve.p0/.bundle-ready": "e21bc6880063fc16ab19958091872468febffd24488cc12776b6e44f5897fed7",
+    "transcripts/BVpreserve.p0/bundle.md": "c799cb9cb07dea3a1eaa7e692422d1a7b488a845a7c62a17ddb918f12cd33211",
+    "transcripts/BVpreserve.p0/bundle.raw.json": "82c84440044336db158bec4fc4eedcac7c7e3affb05f194b4d5ef79127d908e6",
+    "transcripts/BVpreserve.p0/bundle.srt": "84a8124936beebac3c45272d541f9e586fae84224a2de6279928a62b40eef506",
+    "transcripts/BVpreserve.p0/bundle.txt": "e95363debed6dc06c6f793da472adf8c645710891a95319b08500a548659d515",
+    "transcripts/BVpreserve.p0/bundle.vtt": "cd6e22f272e095a051b4e81ca0101976cfb8ec82a5ba2475b483d2d6cea4698c"
+  },
+  "ids": {
+    "asr_v1": 1,
+    "asr_v2": 2,
+    "blocked_job": "2ee58982-6349-4b75-a8f1-a081152720b1",
+    "cancelled_job": "bc5a1ea5-0344-408b-838a-0d26b5cfde7f",
+    "cancelled_part": 3,
+    "draft_base": 4,
+    "draft_part": 2,
+    "draft_revision": "1daec813eabf8b1eb316f3bc899a4ed31c319e062808670df16d9c931aa8eb93",
+    "edition_current": "526ae5c2785b4b2ab81a2de68d3e2a48",
+    "edition_first": "ee452415a85148418629c2d1327de1ca",
+    "edition_published": "9606270d9bd8463491c16d1dbc9cf564",
+    "edition_unpublished": "e568e1d694fa4bad93fb8b5df08d59a1",
+    "published_part": 1,
+    "reference": 3,
+    "release_current": "f6d9c7786a63e6f100540d0ed2de0bbeb0e200b9b0dfad4bf1c216651f1fb5b4",
+    "release_superseded": "ed97bc81542466a2dd653729ed0be3763a00a5cadfeed10317e26f4f9a2f8d35",
+    "release_withdrawn": "bcf76dac7463489a263f36b67ce3075e5cf4b703550bb26801d2caa3c048d6c9",
+    "revision": "2c6a9df34ac010732a53f243eed9aabb48710d672fe5ecacb8ee12e2e6df5966"
+  },
+  "materializer_revision": "effd9df473fca382133067eb1b7e04143ccbb849",
+  "package_sha256": "20790dfc0acec3dda5707cb534907374c458f99b04f1947dc865ffe67b93770b",
+  "source_contract": "bilibili-archive-v1:sha256:07711441cb6b380fb1524b903aa540568c522c4ef6e49bf9451b3b758f6b1f16",
+  "tables": [
+    {
+      "includes_rowid": true,
+      "name": "acquisition_attempts",
+      "row_count": 6,
+      "sha256": "3272d2b648130bf86f51ed287e9b37c650260d0318484ab266ad87330f338734"
+    },
+    {
+      "includes_rowid": true,
+      "name": "acquisition_runs",
+      "row_count": 6,
+      "sha256": "7f4a0dee43f416c254e680b24af77b3af31a042390a8693bef7a7889f96a0f62"
+    },
+    {
+      "includes_rowid": true,
+      "name": "asr_models",
+      "row_count": 1,
+      "sha256": "d05589c42f702f98b53c428ff6e8b316a97e5794754672668be584fd7d4354fe"
+    },
+    {
+      "includes_rowid": true,
+      "name": "audio_objects",
+      "row_count": 1,
+      "sha256": "8bff12b336e3a3dc4be1d0a27af26db271ed08479df84b49e9b7cc3e0309fd44"
+    },
+    {
+      "includes_rowid": true,
+      "name": "bilibili_users",
+      "row_count": 2,
+      "sha256": "a5124815e5cc19ac41a5df4b030d9d6e7717113a47b84c9e2fdd6c8c42d373ce"
+    },
+    {
+      "includes_rowid": true,
+      "name": "document_artifacts",
+      "row_count": 4,
+      "sha256": "f581328ac158efe7538961c6086fb727b782d9e524cc870758bbf9a72d37b9d5"
+    },
+    {
+      "includes_rowid": true,
+      "name": "editorial_chunk_results",
+      "row_count": 2,
+      "sha256": "30f6288df07ea0da6e8d9d7096f3c7f46cb6be3fe82a8856d16e54860b742985"
+    },
+    {
+      "includes_rowid": true,
+      "name": "editorial_inputs",
+      "row_count": 2,
+      "sha256": "aa53cc8f63342df377702e6ccb2e5770dd96e2478d435b032755757d3b0b50fb"
+    },
+    {
+      "includes_rowid": true,
+      "name": "editorial_job_inputs",
+      "row_count": 2,
+      "sha256": "4402b2fcdbb27688ff7c86a98175fb2b8e5301dbcbb6881e3d30ba829f8eef1c"
+    },
+    {
+      "includes_rowid": true,
+      "name": "editorial_model_calls",
+      "row_count": 2,
+      "sha256": "5a98cfa775813ff67fd19c2e473e54d11f4e9a1d03399e106bd419ffb606999e"
+    },
+    {
+      "includes_rowid": true,
+      "name": "editorial_revisions",
+      "row_count": 2,
+      "sha256": "06bc3624d8d7c91db240eb414317c62f8fe46cacf717e52c284719199233c5e2"
+    },
+    {
+      "includes_rowid": true,
+      "name": "ingestion_cursors",
+      "row_count": 1,
+      "sha256": "ba928bc7e273acaa9b0ba2f8009205f3dfeb4ed918447ebad4674582e2d5d9bc"
+    },
+    {
+      "includes_rowid": true,
+      "name": "ingestion_discoveries",
+      "row_count": 2,
+      "sha256": "22130455d5ca43daaace3ea6ec2a8daa82ee7cee948c8f7b672ac0b7272a7948"
+    },
+    {
+      "includes_rowid": true,
+      "name": "ingestion_pages",
+      "row_count": 1,
+      "sha256": "9f228e57de3bb6ff10a22a415bedfe3cc6ba4000cf59176db72015af8ca752d3"
+    },
+    {
+      "includes_rowid": true,
+      "name": "ingestion_runs",
+      "row_count": 1,
+      "sha256": "5ce881f82d175da6bbe457a70ddfec6e6655e036eb3cca921ae2838462d9457a"
+    },
+    {
+      "includes_rowid": true,
+      "name": "manuscript_contract",
+      "row_count": 1,
+      "sha256": "35b55fa7aae1b4d354b15075968935cd738e896e11da7e5978ed0e8914369705"
+    },
+    {
+      "includes_rowid": true,
+      "name": "part_audio_objects",
+      "row_count": 2,
+      "sha256": "5b881ce34404499f839ca65b217a59999ff01129dec9a933d5260373a083b574"
+    },
+    {
+      "includes_rowid": true,
+      "name": "publication_edition_reviews",
+      "row_count": 5,
+      "sha256": "e2d5f4b3b1f5a4cdd2eee147955f38f48cc4ef1ab3d7c7866b22987400d473c7"
+    },
+    {
+      "includes_rowid": true,
+      "name": "publication_editions",
+      "row_count": 5,
+      "sha256": "21bd8f33f9b8093b719a88f0c7616c82eed854f03fbeba5f6d8944814b456b3b"
+    },
+    {
+      "includes_rowid": true,
+      "name": "publication_events",
+      "row_count": 18,
+      "sha256": "f5e87dabc0c90b830728f6ba066a3db3947d65bd6bc751e5949649f99f540167"
+    },
+    {
+      "includes_rowid": true,
+      "name": "publication_heads",
+      "row_count": 2,
+      "sha256": "8a5c1a3415e81be816952c4c623bfe7ff69f377aa54918648469f38cc09831ae"
+    },
+    {
+      "includes_rowid": true,
+      "name": "publication_releases",
+      "row_count": 3,
+      "sha256": "a84849df21720bcb2074e9babf5ae2f64934965b4bdadf3cda8cb49b7709dd91"
+    },
+    {
+      "includes_rowid": true,
+      "name": "transcript_asr_evidence",
+      "row_count": 2,
+      "sha256": "2d60800fe78a9059b5851793d39bd729809e0ea5ba5416cc271ae9bdfa48bd53"
+    },
+    {
+      "includes_rowid": true,
+      "name": "transcript_coverage_attestations",
+      "row_count": 2,
+      "sha256": "add445217658519bd20c8f50aa8c7421811c6415cad7295dc103cfa98ece1996"
+    },
+    {
+      "includes_rowid": true,
+      "name": "transcript_segments",
+      "row_count": 4,
+      "sha256": "0c4ecec89fb0798295e72a80c65c5e7561da079f017f344c62eea1daae1c4890"
+    },
+    {
+      "includes_rowid": true,
+      "name": "transcripts",
+      "row_count": 4,
+      "sha256": "61830a19cf57a43825b4e8c7c525dc57e03147b48b662b3fbb9f579c297dd2f3"
+    },
+    {
+      "includes_rowid": true,
+      "name": "video_details",
+      "row_count": 0,
+      "sha256": "0e562453d8b977239952209bb4b12b5cbc77628f45b95e17fa40930ba257a96f"
+    },
+    {
+      "includes_rowid": true,
+      "name": "video_parts",
+      "row_count": 3,
+      "sha256": "8a9b76ff8ac70f0e04899100ab179434398500c34ed1a09425c0e59d4707dd06"
+    },
+    {
+      "includes_rowid": true,
+      "name": "video_tag_observations",
+      "row_count": 2,
+      "sha256": "584e9f87896261ebcb1f49fc1e4795101ebae889083a760acd62a4db59458cec"
+    },
+    {
+      "includes_rowid": true,
+      "name": "video_tags",
+      "row_count": 2,
+      "sha256": "5882d1174788e23724bce07c648071897cd2db83a7f67aa1630330e673c3bd29"
+    },
+    {
+      "includes_rowid": true,
+      "name": "videos",
+      "row_count": 2,
+      "sha256": "9d5a74ce0ee643e51de093689a0dc1dd114b84d03e5af5a052ae676a6a537648"
+    },
+    {
+      "includes_rowid": true,
+      "name": "workflow_asr_profile_configs",
+      "row_count": 1,
+      "sha256": "f5c3e07c413ce600c605a1389d1b3355bc368455eb51c9411b8c88c9d18ca14e"
+    },
+    {
+      "includes_rowid": true,
+      "name": "workflow_asr_profiles",
+      "row_count": 1,
+      "sha256": "207867d90f68785a611579d7c68150df63f104aa532e20c05522c5f3a04e812c"
+    },
+    {
+      "includes_rowid": true,
+      "name": "workflow_attempts",
+      "row_count": 8,
+      "sha256": "af15def4de3f8bb96bb12b6b8722b9dcdc705d93d8875a7371f32f418d395ecf"
+    },
+    {
+      "includes_rowid": true,
+      "name": "workflow_job_dependencies",
+      "row_count": 4,
+      "sha256": "b7cfb91d7f14e205447ba992bf295ee5dd8197f2e9a93a53dbc8349c0d18d800"
+    },
+    {
+      "includes_rowid": true,
+      "name": "workflow_jobs",
+      "row_count": 10,
+      "sha256": "fdb00587710eb306123cf88351eb8bd0db36cae441045383dc4a3bc37bc0315c"
+    },
+    {
+      "includes_rowid": true,
+      "name": "workflow_publications",
+      "row_count": 1,
+      "sha256": "fb9fe86172a40f39b096158ab65d5010e94d6fbd3d587e7f8b0b9dd3dc3726f1"
+    },
+    {
+      "includes_rowid": true,
+      "name": "workflow_quality_assessments",
+      "row_count": 0,
+      "sha256": "8ec4f60df87934630e7f00602f45b8f527adfb59e40aa89047cb19bea58922a6"
+    }
+  ]
+}

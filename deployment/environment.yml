@@ -1,0 +1,7 @@
+name: batch-transcribe-proofread
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12.15
+  - pip=25.3
+  - ffmpeg=7.1.1

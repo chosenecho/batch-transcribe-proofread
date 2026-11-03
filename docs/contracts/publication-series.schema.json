@@ -1,0 +1,154 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "manuscriptType",
+    "editorialVersion",
+    "series"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "manuscriptType": {
+      "enum": [
+        "publication",
+        "publication-draft"
+      ]
+    },
+    "editorialVersion": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "series": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "sourceUrl",
+          "evidence",
+          "members",
+          "knownMissing"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\u0000-\\u001f]+$"
+          },
+          "sourceUrl": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://"
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\u0000-\\u001f]+$"
+          },
+          "members": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "bvid",
+                "label",
+                "ordinal",
+                "entries"
+              ],
+              "properties": {
+                "bvid": {
+                  "type": "string",
+                  "pattern": "^BV[0-9A-Za-z]{10}$"
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[^\\u0000-\\u001f]+$"
+                },
+                "ordinal": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "entries": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "slug",
+                      "editionId",
+                      "contentSha256",
+                      "artifactSha256"
+                    ],
+                    "properties": {
+                      "slug": {
+                        "type": "string",
+                        "pattern": "^(part-[1-9][0-9]*|edition-[0-9a-f]{32})$"
+                      },
+                      "editionId": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{32}$"
+                      },
+                      "contentSha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      },
+                      "artifactSha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "knownMissing": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "ordinal",
+                "label",
+                "note"
+              ],
+              "properties": {
+                "ordinal": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[^\\u0000-\\u001f]+$"
+                },
+                "note": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[^\\u0000-\\u001f]+$"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Public category-bound series v1",
+  "description": "Shape contract; also enforce normalized strings, safe HTTPS evidence URLs, unique IDs and BVIDs, strictly increasing positive ordinals, disjoint knownMissing, and exact complete category-catalog bindings as documented in publication-series.md."
+}
