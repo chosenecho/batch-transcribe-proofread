@@ -1,0 +1,56 @@
+name: Upstream commit notifications
+
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+    inputs:
+      test_notification:
+        description: 'Send an explicitly labeled test notification'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: upstream-commit-monitor
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify notification behavior
+        run: python3 -m unittest tests.test_upstream_monitor
+      - name: Prepare read-only upstream access
+        env:
+          UPSTREAM_SSH_KEY: ${{ secrets.UPSTREAM_SSH_KEY }}
+        shell: bash
+        run: |
+          test -n "$UPSTREAM_SSH_KEY"
+          install -m 700 -d "$RUNNER_TEMP/upstream-ssh"
+          printf '%s\n' "$UPSTREAM_SSH_KEY" > "$RUNNER_TEMP/upstream-ssh/id_ed25519"
+          chmod 600 "$RUNNER_TEMP/upstream-ssh/id_ed25519"
+      - name: Check upstream and notify
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TEST_NOTIFICATION: ${{ inputs.test_notification }}
+        shell: bash
+        run: |
+          export GIT_SSH_COMMAND="ssh -i '$RUNNER_TEMP/upstream-ssh/id_ed25519' -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile='$GITHUB_WORKSPACE/.github/upstream-known-hosts'"
+          if [[ "$TEST_NOTIFICATION" == "true" ]]; then
+            python3 scripts/upstream_monitor.py --test-notification
+          else
+            python3 scripts/upstream_monitor.py
+          fi
+      - name: Remove temporary key
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/upstream-ssh/id_ed25519"

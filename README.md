@@ -93,6 +93,10 @@ uv run --no-sync batch-transcribe editorial --help
 uv run --no-sync batch-transcribe verify --archive-root archive
 ```
 
+## 上游更新通知
+
+本仓库监测上游 bilibili-asr-archive 的所有分支，约每 15 分钟检查一次。有新提交头时，在本仓库的“上游提交监测”Issue 中评论并通知接收人；没有变化时保持安静。由于上游是私有仓库，公开提醒不包含分支名、提交消息或代码。配置、手动测试和调度限制见 [上游通知说明](docs/upstream-monitor.md)。
+
 ## 开发与来源
 
 迁移范围、兼容性说明和验证记录见 [docs/extraction.md](docs/extraction.md)，原始文件清单及哈希见 [docs/extraction-manifest.json](docs/extraction-manifest.json)。`docs/asr`、`docs/contracts` 和 `docs/operations` 保留原处理系统的技术参考，其中历史采集说明只用于理解旧档案。

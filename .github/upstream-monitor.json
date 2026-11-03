@@ -1,0 +1,7 @@
+{
+  "upstream": "chosenecho/bilibili-asr-archive",
+  "issue": 1,
+  "notify": [
+    "chosenecho"
+  ]
+}

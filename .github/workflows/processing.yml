@@ -19,5 +19,6 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: uv sync --locked --extra dev --python 3.12
       - run: uv run --no-sync ruff check src scripts tests --select E9,F821,F822,F823
+      - run: uv run --no-sync python -m unittest tests.test_upstream_monitor
       - run: uv run --no-sync python scripts/validate_processing.py
       - run: uv build --no-sources
